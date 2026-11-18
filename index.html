@@ -379,6 +379,9 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
     <div class="row" style="margin-top:8px"><span class="small">제미나이 전사 간격</span>
       <select id="chunkSel" style="width:auto"><option value="15">15초 (빠름)</option><option value="20">20초 (권장)</option><option value="30">30초 (정확)</option></select></div>
 
+    <div class="row" style="margin-top:12px"><button id="txTest">🧪 전사 시험 (5초 말해 보기)</button></div>
+    <div class="small" id="txTestOut" style="margin-top:6px;line-height:1.6"></div>
+
     <label for="modelSel">사용할 모델</label>
     <select id="modelSel"></select>
     <div class="small" style="margin-top:6px">기본은 ‘Flash’ 계열(빠르고 무료 한도가 넉넉함)을 권장합니다. ‘연결 확인’을 누르면 사용 가능한 모델 목록이 갱신됩니다.</div>
@@ -678,6 +681,16 @@ let chunkSec = 20, activeEngine = null;
 const txQueue = [], failedJobs = [];
 let txBusy = false, txBanner = false;
 let txSource = 'pcm', recChunk = null, recTimer = null, silentRun = 0, lvl = 0;
+let txActive = 0; const TX_PAR = 2, txInflight = new Set();
+const txTimeout = () => (+localStorage.getItem('meetnote.txtimeout') || 45) * 1000;
+// 전사용 모델: 느린 Pro 계열은 피하고 빠른 Flash 계열을 사용
+function liveModel(){
+  const o = localStorage.getItem('meetnote.livemodel'); if(o) return o;
+  const m = getModel(); if(!/pro/i.test(m)) return m;
+  let list = []; try{ list = JSON.parse(localStorage.getItem('meetnote.models') || '[]'); } catch {}
+  const f = list.filter(x => /flash/.test(x.id) && !/lite/.test(x.id)).sort((a, b) => rankModel(b.id) - rankModel(a.id))[0];
+  return f ? f.id : 'gemini-flash-latest';
+}
 const stats = { chunks: 0, silent: 0, sent: 0, lines: 0, empty: 0, emptyRun: 0, decodeFail: 0 };
 function resetStats(){ Object.keys(stats).forEach(k => stats[k] = 0); txSource = 'pcm'; silentRun = 0; lvl = 0; }
 function getEngine(){ const e = localStorage.getItem('meetnote.engine'); return ['gemini', 'browser', 'off'].includes(e) ? e : (getKey() ? 'gemini' : 'browser'); }
@@ -690,7 +703,7 @@ function chooseEngine(){
 }
 function pcmReset(){
   chunkSec = getChunkSec();
-  pcm.arr = new Int16Array(PCM_HZ * (chunkSec + 8)); pcm.n = 0; pcm.sq = 0; pcm.pos = 0; pcm.acc = 0; pcm.cnt = 0; pcm.t0 = now();
+  pcm.arr = new Int16Array(PCM_HZ * (chunkSec + 8)); pcm.n = 0; pcm.sq = 0; pcm.pos = 0; pcm.acc = 0; pcm.cnt = 0; pcm.t0 = now(); pcm.first = true;
 }
 function onPCM(e){
   pcm.blocks++;
@@ -709,7 +722,7 @@ function onPCM(e){
     }
   }
   // 정해진 길이가 지나면, 말이 잠깐 쉬는 지점에서 끊어 단어가 잘리지 않게 함 (최대 +6초)
-  const target = chunkSec * PCM_HZ;
+  const target = (pcm.first ? Math.min(10, chunkSec) : chunkSec) * PCM_HZ;   // 첫 구간은 짧게 끊어 빨리 확인
   if(pcm.n >= target){
     const avg = Math.sqrt(pcm.sq / pcm.n);
     if(blockRms <= avg * 0.4 || pcm.n >= target + 6 * PCM_HZ) flushPCM();
@@ -718,7 +731,7 @@ function onPCM(e){
 function flushPCM(final){
   if(!pcm.arr || !pcm.n) return;
   const n = pcm.n, t0 = pcm.t0, samples = pcm.arr.slice(0, n);
-  pcm.n = 0; pcm.sq = 0; pcm.t0 = t0 + n / PCM_HZ;
+  pcm.n = 0; pcm.sq = 0; pcm.t0 = t0 + n / PCM_HZ; pcm.first = false;
   if(txSource === 'pcm') submitSamples(samples, t0, final);
 }
 // 한 구간의 소리(16kHz Int16)를 검사·보정해서 전사 대기열에 넣음
@@ -804,29 +817,33 @@ function watchPCM(){
   }, 3500);
 }
 function enqueueTx(job){ txQueue.push(job); renderTxStat(); pumpTx(); }
-async function pumpTx(){
-  if(txBusy) return;
-  txBusy = true; renderTxStat();
-  while(txQueue.length){
-    const job = txQueue.shift(); renderTxStat();
-    try{
-      const added = await runTx(job);
-      if(added && txBanner){ hideBanner(); txBanner = false; }
-    } catch(e){
-      job.tries++;
-      const auth = e.status === 401 || e.status === 403 || e.status === 404;
-      const fatal = auth || e.status === 400;
-      if(!fatal && job.tries < 3){ await sleep(e.status === 429 ? 20000 : 3000 * job.tries); txQueue.unshift(job); }
-      else {
-        failedJobs.push(job);
-        if(auth){ while(txQueue.length) failedJobs.push(txQueue.shift()); }
-        txBanner = true;
-        showBanner('⚠ 제미나이 전사 실패: ' + String(e.message || e).split('\n')[0] + ' · 녹음은 계속 저장되며, 끝난 뒤 ‘AI 회의록’ 정밀 정리로 복구할 수 있습니다.', true);
-      }
+function pumpTx(){
+  while(txActive < TX_PAR && txQueue.length){ txActive++; txWorker(); }
+  txBusy = txActive > 0; renderTxStat();
+}
+async function txWorker(){
+  try{
+    while(txQueue.length){
+      const job = txQueue.shift(); job.tStart = performance.now(); txInflight.add(job); renderTxStat();
+      try{
+        const added = await runTx(job);
+        stats.lastMs = Math.round((performance.now() - job.tStart) / 100) / 10; stats.retryMsg = '';
+        if(added && txBanner){ hideBanner(); txBanner = false; }
+      } catch(e){
+        job.tries++; stats.retryMsg = String(e.message || e).split('\n')[0].slice(0, 50);
+        const auth = e.status === 401 || e.status === 403 || e.status === 404;
+        const fatal = auth || e.status === 400;
+        if(!fatal && job.tries < 3){ txInflight.delete(job); await sleep(e.status === 429 ? 20000 : 3000 * job.tries); txQueue.unshift(job); }
+        else {
+          failedJobs.push(job);
+          if(auth){ while(txQueue.length) failedJobs.push(txQueue.shift()); }
+          txBanner = true;
+          showBanner('⚠ 제미나이 전사 실패: ' + String(e.message || e).split('\n')[0] + ' · 녹음은 계속 저장되며, 끝난 뒤 ‘AI 회의록’ 정밀 정리로 복구할 수 있습니다.', true);
+        }
+      } finally { txInflight.delete(job); }
+      renderTxStat();
     }
-    renderTxStat();
-  }
-  txBusy = false; renderTxStat();
+  } finally { txActive--; txBusy = txActive > 0; renderTxStat(); }
 }
 function retryFailed(){
   const js = failedJobs.splice(0);
@@ -852,7 +869,10 @@ function spkAt(t){ let id = null; for(const e of S.spkLog){ if(e.t <= t + 0.3) i
 async function runTx(job){
   const b64 = await blobToB64(job.blob);
   const mime = (job.blob.type || 'audio/wav').split(';')[0];
-  const r = await generate([{ inline_data: { mime_type: mime, data: b64 } }, { text: liveTxPrompt(job) }], { json: true, schema: TX_SCHEMA });
+  const call = m => generate([{ inline_data: { mime_type: mime, data: b64 } }, { text: liveTxPrompt(job) }], { json: true, schema: TX_SCHEMA, model: m, timeoutMs: txTimeout(), noThink: true });
+  let r;
+  try{ r = await call(liveModel()); }
+  catch(e){ if(e.status === 404 && liveModel() !== getModel()){ localStorage.setItem('meetnote.livemodel', getModel()); r = await call(getModel()); } else throw e; }
   if(job.sid !== S.sid) return 0;           // 그 사이 새 회의를 시작했다면 버림
   let arr; try{ arr = JSON.parse(r.text); } catch { throw new Error('제미나이 응답을 해석하지 못했습니다'); }
   if(!Array.isArray(arr)) arr = [];
@@ -880,7 +900,7 @@ function renderTxStat(){
   const el = $('#txStat'); if(!el) return;
   const eng = (mode !== 'idle' && activeEngine) ? activeEngine : getEngine();
   let t = { gemini: '☁ 제미나이 전사', browser: '📱 기기 전사', off: '⛔ 전사 꺼짐' }[eng] || '';
-  if(eng === 'gemini'){ const q = txQueue.length + (txBusy ? 1 : 0); if(q) t += ` · ⏳ 전사 중 ${q}`; }
+  if(eng === 'gemini'){ const q = txQueue.length + txActive; if(q) t += ` · ⏳ 전사 중 ${q}`; }
   if(failedJobs.length) t += ` · ⚠ 실패 ${failedJobs.length}건 (눌러서 재시도)`;
   el.textContent = t; el.classList.toggle('warn', !!failedJobs.length);
   el.title = failedJobs.length ? '눌러서 실패한 구간을 다시 전사합니다' : '눌러서 전사 방식 변경';
@@ -889,14 +909,17 @@ $('#txStat').onclick = () => { if(failedJobs.length) retryFailed(); else openSet
 // 다음 전사까지 남은 시간 + 입력 소리 + 진행 현황
 setInterval(() => {
   if(activeEngine !== 'gemini') return;
-  const q = txQueue.length + (txBusy ? 1 : 0); let msg = '';
+  const q = txQueue.length + txActive; let msg = '';
+  let wait = 0; txInflight.forEach(j => { wait = Math.max(wait, (performance.now() - j.tStart) / 1000); });
+  const tail = (q ? ` · 전사 대기 ${q}` : '') + (wait > 8 ? ` · 응답 기다리는 중 ${Math.round(wait)}초` : '') + (stats.lastMs ? ` · 최근 응답 ${stats.lastMs}초` : '') + (stats.retryMsg ? ` · ⚠ ${stats.retryMsg}` : '');
   if(mode === 'recording'){
+    const tgt = pcm.first ? Math.min(10, chunkSec) : chunkSec;
     const used = txSource === 'rec' ? (recChunk ? now() - recChunk.t0 : 0) : pcm.n / PCM_HZ;
-    const left = Math.max(0, Math.ceil(chunkSec - used));
-    const L = Math.min(8, Math.round(lvl * 40)), bar = '▮'.repeat(L) + '▯'.repeat(8 - L);
-    msg = `🎙 듣는 중… 약 ${left}초 뒤 글자로 나타납니다 · 입력 ${bar} · 구간 ${stats.chunks}(전송 ${stats.sent}·무음 ${stats.silent}) · 글자 ${stats.lines}줄` + (q ? ` · 대기 ${q}` : '');
+    const left = Math.max(0, Math.ceil(tgt - used));
+    const L = Math.min(8, Math.round(Math.sqrt(lvl) * 20)), bar = '▮'.repeat(L) + '▯'.repeat(8 - L);
+    msg = `🎙 듣는 중 · ${left}초 뒤 전사 · 입력 ${bar} · 글자 ${stats.lines}줄` + tail;
   }
-  else if(q) msg = `⏳ 남은 구간 전사 중… (${q})`;
+  else if(q) msg = `⏳ 남은 구간 전사 중 (${q})` + tail;
   if(interimEl.textContent !== msg){ interimEl.textContent = msg; if(msg && stick) linesEl.scrollTop = linesEl.scrollHeight; }
 }, 500);
 
@@ -1223,7 +1246,10 @@ function apiError(status, raw){
 async function gfetch(path, opts = {}){
   let r;
   try{ r = await fetch(API + path, { ...opts, headers: { 'x-goog-api-key': getKey(), ...(opts.headers || {}) } }); }
-  catch(e){ const er = new Error('구글 서버에 연결할 수 없습니다. 인터넷 연결(행정망 차단 여부)을 확인해 주세요.'); er.network = true; throw er; }
+  catch(e){
+    if(e && e.name === 'AbortError'){ const er = new Error('응답이 너무 늦어 중단했습니다'); er.timeout = true; throw er; }
+    const er = new Error('구글 서버에 연결할 수 없습니다. 인터넷 연결(행정망 차단 여부)을 확인해 주세요.'); er.network = true; throw er;
+  }
   if(!r.ok) throw apiError(r.status, await r.text());
   return r;
 }
@@ -1240,10 +1266,26 @@ function rankModel(id){
   const v = parseFloat((id.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0); s += v * 10;
   return s;
 }
-async function generate(parts, { json = false, schema = null } = {}){
-  const body = { contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.2 } };
-  if(json){ body.generationConfig.responseMimeType = 'application/json'; if(schema) body.generationConfig.responseSchema = schema; }
-  const j = await (await gfetch(`/v1beta/models/${encodeURIComponent(getModel())}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+async function generate(parts, { json = false, schema = null, model = null, timeoutMs = 0, noThink = false } = {}){
+  const mk = think => {
+    const body = { contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.2 } };
+    if(json){ body.generationConfig.responseMimeType = 'application/json'; if(schema) body.generationConfig.responseSchema = schema; }
+    if(think) body.generationConfig.thinkingConfig = { thinkingBudget: 0 };     // 짧은 전사에는 '생각 시간'이 필요 없음
+    return body;
+  };
+  const call = async think => {
+    const ctl = timeoutMs ? new AbortController() : null, tm = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : 0;
+    try{
+      const r = await gfetch(`/v1beta/models/${encodeURIComponent(model || getModel())}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mk(think)), ...(ctl ? { signal: ctl.signal } : {}) });
+      return await r.json();
+    } catch(e){
+      if(e && e.name === 'AbortError'){ const er = new Error('응답이 너무 늦어 중단했습니다'); er.timeout = true; throw er; }
+      throw e;
+    } finally { clearTimeout(tm); }
+  };
+  let j;
+  try{ j = await call(noThink); }
+  catch(e){ if(noThink && e.status === 400 && /think/i.test(e.detail || '')) j = await call(false); else throw e; }
   const c = j.candidates?.[0];
   const text = (c?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
   if(!text) throw new Error('AI 응답이 비어 있습니다.' + (c?.finishReason ? ` (사유: ${c.finishReason})` : '') + (j.promptFeedback?.blockReason ? ` (차단: ${j.promptFeedback.blockReason})` : ''));
@@ -1471,6 +1513,31 @@ function openSettings(){
   openModal('#mSettings');
 }
 $$('input[name=engine]').forEach(r => r.addEventListener('change', e => { localStorage.setItem('meetnote.engine', e.target.value); renderTxStat(); if(mode !== 'idle') toast('전사 방식은 다음 ‘계속 녹음’부터 적용됩니다.'); }));
+$('#txTest').onclick = async () => {
+  const out = $('#txTestOut');
+  if(mode !== 'idle'){ out.textContent = '녹음 중에는 시험할 수 없습니다. 종료 후 다시 눌러 주세요.'; return; }
+  if(!getKey()){ out.textContent = '먼저 위에서 API 키를 등록하고 ‘연결 확인’을 눌러 주세요.'; return; }
+  let st; try{ st = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch(e){ out.textContent = '마이크를 사용할 수 없습니다: ' + (e.name || e); return; }
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+  const rec = new MediaRecorder(st, mime ? { mimeType: mime } : {}), parts = [];
+  rec.ondataavailable = e => { if(e.data && e.data.size) parts.push(e.data); };
+  const stopped = new Promise(r => { rec.onstop = r; });
+  out.textContent = '🎤 지금 5초 동안 아무 말이나 또렷하게 말씀해 보세요…';
+  rec.start(); await sleep(5000); rec.stop(); await stopped; st.getTracks().forEach(t => t.stop());
+  out.textContent = '⏳ 제미나이에 보내는 중…';
+  const t0 = performance.now();
+  try{
+    const i16 = await decodeTo16k(new Blob(parts, { type: rec.mimeType || 'audio/mp4' }));
+    let sq = 0; for(let i = 0; i < i16.length; i++) sq += i16[i] * i16[i];
+    const rms = Math.sqrt(sq / Math.max(1, i16.length)) / 32768;
+    if(rms < 0.0003){ out.textContent = '❌ 마이크에서 소리가 거의 들어오지 않았습니다. 사파리의 마이크 권한과 기기 음량, 마이크 가림 여부를 확인해 주세요.'; return; }
+    let peak = 0; for(let i = 0; i < i16.length; i++){ const a = Math.abs(i16[i]); if(a > peak) peak = a; }
+    if(peak < 16000){ const g = Math.min(30, 26000 / Math.max(peak, 1)); for(let i = 0; i < i16.length; i++) i16[i] = Math.max(-32768, Math.min(32767, i16[i] * g)); }
+    const wav = encodeWav(i16), b64 = await blobToB64(wav);
+    const r = await generate([{ inline_data: { mime_type: 'audio/wav', data: b64 } }, { text: '이 녹음을 한국어로 들리는 그대로 전사하세요. 말소리가 없으면 "(말소리 없음)"이라고만 쓰세요.' }], { model: liveModel(), timeoutMs: txTimeout(), noThink: true });
+    out.textContent = `✅ 성공 · 응답 ${((performance.now() - t0) / 1000).toFixed(1)}초 · 입력 소리 ${(rms * 100).toFixed(1)}% · 모델 ${liveModel()} → “${r.text.trim().slice(0, 120)}”`;
+  } catch(e){ out.textContent = '❌ 실패: ' + String(e.message || e).split('\n')[0] + (e.status ? ` (${e.status})` : ''); }
+};
 $('#chunkSel').onchange = e => localStorage.setItem('meetnote.chunk', e.target.value);
 $('#btnSettings').onclick = openSettings;
 $('#keyShow').onclick = () => { const i = $('#keyIn'); i.type = i.type === 'password' ? 'text' : 'password'; };
