@@ -148,6 +148,9 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
 .pre{white-space:pre-wrap;font-size:calc(var(--fs) - 1px);line-height:1.7}
 
 /* 모달 */
+#txStat{font-size:12px;padding:4px 10px;border-radius:999px;color:var(--muted);background:#f1f3f7;border:none;min-height:0}
+#txStat.warn{background:var(--rec-weak);color:var(--rec);font-weight:700}
+.modal-c label.opt{display:flex;font-size:14px;font-weight:400;margin:8px 0 0}
 .modal{position:fixed;inset:0;background:rgba(20,26,40,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
 .modal-c{background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .modal-c h3{margin:0 0 12px;font-size:19px}
@@ -227,6 +230,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
     <div class="pane-h">
       <h2>🎙 실시간 전사</h2>
       <span class="sub" id="lineCount"></span>
+      <button id="txStat" title="전사 방식 변경"></button>
       <span style="flex:1"></span>
       <span class="small" id="editHint">글자를 클릭하면 바로 고칠 수 있어요</span>
     </div>
@@ -236,7 +240,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
         <b>시작하는 방법</b>
         <ol>
           <li>위의 <b>‘● 녹음 시작’</b>을 누르고, 마이크 사용을 <b>허용</b>하세요.</li>
-          <li>말하는 내용이 이 창에 자동으로 적힙니다.</li>
+          <li>말하는 내용이 이 창에 글자로 나타납니다. (제미나이 전사: 약 20초 간격으로 한꺼번에 / 기기 음성인식: 즉시)</li>
           <li><b>발언자가 바뀌면 위의 이름 버튼</b>을 눌러 주세요. 이후 발언에 이름이 붙습니다. (회의 정보에 참석자를 적어 두면 ‘📋 참석자 명단 불러오기’로 버튼이 한 번에 만들어집니다)</li>
           <li>오른쪽 메모장에 자유롭게 메모하세요. <b>🕐 시각</b> 버튼은 현재 시각을, <b>⭐ 방금 발언</b> 버튼은 방금 나온 말을 메모로 가져옵니다.</li>
           <li>휴식 시간에는 <b>일시정지</b>, 간담회가 끝나면 <b>‘■ 종료’</b>를 누르세요.</li>
@@ -362,11 +366,25 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
       <button class="primary" id="keyTest">연결 확인</button>
       <span class="small" id="keyMsg"></span>
     </div>
+    <label>실시간 전사 방식</label>
+    <label class="opt"><input type="radio" name="engine" value="gemini">
+      <div><b>☁ 제미나이 준실시간 (권장)</b>
+      <span>녹음을 약 20초마다 제미나이로 보내 글자로 바꿉니다. iPad에서도 안정적이고 정확합니다. 말한 뒤 10~30초 후에 화면에 나타납니다.</span></div></label>
+    <label class="opt"><input type="radio" name="engine" value="browser">
+      <div><b>📱 기기 음성인식</b>
+      <span>즉시 표시되고 API가 필요 없습니다. 다만 iPad 사파리에서는 인식이 드문드문 끊길 수 있습니다.</span></div></label>
+    <label class="opt"><input type="radio" name="engine" value="off">
+      <div><b>⛔ 실시간 전사 끄기</b>
+      <span>녹음만 합니다. 끝난 뒤 ‘AI 회의록’으로 정리합니다. 녹음 중에는 음성이 외부로 나가지 않습니다.</span></div></label>
+    <div class="row" style="margin-top:8px"><span class="small">제미나이 전사 간격</span>
+      <select id="chunkSel" style="width:auto"><option value="15">15초 (빠름)</option><option value="20">20초 (권장)</option><option value="30">30초 (정확)</option></select></div>
+
     <label for="modelSel">사용할 모델</label>
     <select id="modelSel"></select>
     <div class="small" style="margin-top:6px">기본은 ‘Flash’ 계열(빠르고 무료 한도가 넉넉함)을 권장합니다. ‘연결 확인’을 누르면 사용 가능한 모델 목록이 갱신됩니다.</div>
     <div class="warn" style="margin-top:16px">
       🔒 <b>보안 안내</b><br>
+      · ‘제미나이 준실시간 전사’를 쓰면 <b>녹음 음성이 약 20초마다 구글 서버로 전송</b>됩니다. 민감한 간담회는 ‘기기 음성인식’ 또는 ‘전사 끄기’를 선택하세요.<br>
       · API 키는 <b>이 기기의 브라우저에만</b> 저장되며 다른 곳으로 전송되지 않습니다(구글 호출 시에만 사용).<br>
       · <b>무료 등급</b>으로 보낸 내용은 구글의 서비스 개선에 활용될 수 있습니다. 개인정보·민감 사안이 포함된 간담회는 ‘빠른 정리’(텍스트만 전송) 또는 AI 정리를 생략하세요.
     </div>
@@ -465,7 +483,7 @@ const IDB = {
 
 /* ============ 상태 (localStorage 자동 저장) ============ */
 const KEY = 'meetnote.session.v1';
-function fresh(){ return { sid: 's' + Date.now(), meta: { title: '', date: todayStr(), place: '', attendees: '' }, lines: [], memo: '', speakers: [], curSpk: null, elapsed: 0, segments: [], result: null, savedAt: 0 }; }
+function fresh(){ return { sid: 's' + Date.now(), meta: { title: '', date: todayStr(), place: '', attendees: '' }, lines: [], memo: '', speakers: [], curSpk: null, spkLog: [], elapsed: 0, segments: [], result: null, savedAt: 0 }; }
 function loadState(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && s.sid) return s; } catch {} return null; }
 let S = loadState() || fresh();
 let saveTimer;
@@ -480,6 +498,7 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 function now(){ return S.elapsed + (mode === 'recording' ? (performance.now() - runStart) / 1000 : 0); }
 
 async function startRecording(){
+  prepAudioCtx();   // iOS: 탭 직후(비동기 대기 전)에 오디오 엔진을 깨워 둠
   try{
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   } catch(e){
@@ -487,6 +506,7 @@ async function startRecording(){
     return;
   }
   hideBanner();
+  activeEngine = chooseEngine();
   const segNo = S.segments.reduce((m, x) => Math.max(m, x.seg + 1), 0);
   S.segments.push({ seg: segNo, start: S.elapsed });
   const chunks = [];
@@ -500,11 +520,14 @@ async function startRecording(){
   rec.start(5000);           // 5초마다 조각 저장
   startMeter(stream);
   mode = 'recording'; runStart = performance.now(); lastResultAt = performance.now(); warnedNoText = false;
+  pcmReset(); if(activeEngine === 'gemini') watchPCM(); renderTxStat();
   try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
-  startRecog(); keepAwake(true);
+  if(activeEngine === 'browser') startRecog();
+  keepAwake(true);
   save(); updateUI();
 }
 function pauseRecording(){
+  flushPCM(true);
   S.elapsed = now(); mode = 'paused';
   try{ recorder.pause(); } catch {}
   stopRecog(); save(); updateUI();
@@ -512,10 +535,13 @@ function pauseRecording(){
 function resumeRecording(){
   try{ recorder.resume(); } catch {}
   mode = 'recording'; runStart = performance.now();
-  startRecog(); updateUI();
+  activeEngine = chooseEngine(); prepAudioCtx(); pcmReset(); if(activeEngine === 'gemini') watchPCM();
+  if(activeEngine === 'browser') startRecog();
+  renderTxStat(); updateUI();
 }
 function stopRecording(){
   if(mode === 'idle') return;
+  flushPCM(true);
   S.elapsed = now(); mode = 'idle';
   stopRecog(); commitInterim();
   try{ recorder.stop(); } catch {}
@@ -539,31 +565,45 @@ document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'hidden'){ saveNow(); return; }
   if(mode !== 'recording') return;
   keepAwake(true);
+  if(meterCtx && meterCtx.state !== 'running') meterCtx.resume().catch(() => {});
   const track = stream && stream.getAudioTracks()[0];
   const dead = !recorder || recorder.state === 'inactive' || !track || track.readyState === 'ended';
   if(dead){
-    S.elapsed = now(); mode = 'idle'; stopRecog(); commitInterim(); stopMeter(); keepAwake(false);
+    flushPCM(true); S.elapsed = now(); mode = 'idle'; stopRecog(); commitInterim(); stopMeter(); keepAwake(false);
     try{ recorder && recorder.state !== 'inactive' && recorder.stop(); } catch {}
     save(); updateUI();
     showBanner('⚠ 화면을 벗어난 동안 녹음이 멈췄습니다. 그 전까지의 녹음은 안전하게 저장되었습니다. ‘● 이어서 녹음’을 눌러 계속하세요.', true);
   } else if(recogWanted && recog){ try{ recog.start(); } catch {} }
 });
 
-/* 마이크 입력 막대 */
-let meterCtx, meterRaf;
+/* 마이크 입력 막대 + 전사용 PCM 수집 */
+let meterCtx = null, meterRaf, pcmNode = null;
+function prepAudioCtx(){
+  try{
+    if(!meterCtx || meterCtx.state === 'closed') meterCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(meterCtx.state !== 'running') meterCtx.resume().catch(() => {});
+  } catch {}
+}
 function startMeter(st){
   try{
-    meterCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if(meterCtx.state === 'suspended') meterCtx.resume().catch(() => {});
-    const an = meterCtx.createAnalyser(); an.fftSize = 512;
-    meterCtx.createMediaStreamSource(st).connect(an);
+    prepAudioCtx();
+    const src = meterCtx.createMediaStreamSource(st);
+    const an = meterCtx.createAnalyser(); an.fftSize = 512; src.connect(an);
+    // 제미나이 전사용: 마이크 소리를 16kHz PCM으로 모음 (화면에는 소리가 나지 않음)
+    pcmNode = meterCtx.createScriptProcessor(4096, 1, 1); pcmNode.onaudioprocess = onPCM;
+    const mute = meterCtx.createGain(); mute.gain.value = 0;
+    src.connect(pcmNode); pcmNode.connect(mute); mute.connect(meterCtx.destination);
     const buf = new Uint8Array(an.fftSize);
     const loop = () => { an.getByteTimeDomainData(buf); let sum = 0; for(const v of buf){ const x = (v - 128) / 128; sum += x*x; }
       const lvl = Math.min(1, Math.sqrt(sum / buf.length) * 4); if(lvl > 0.18) loudAt = performance.now(); $('#meterBar').style.width = (mode === 'recording' ? lvl * 100 : 0) + '%'; meterRaf = requestAnimationFrame(loop); };
     loop();
   } catch {}
 }
-function stopMeter(){ cancelAnimationFrame(meterRaf); $('#meterBar').style.width = '0'; try{ meterCtx && meterCtx.close(); } catch {} }
+function stopMeter(){
+  cancelAnimationFrame(meterRaf); $('#meterBar').style.width = '0';
+  try{ if(pcmNode) pcmNode.onaudioprocess = null; meterCtx && meterCtx.close(); } catch {}
+  meterCtx = null; pcmNode = null;
+}
 
 /* ============ 실시간 음성 인식 ============ */
 let recog = null, recogWanted = false, segStart = null, interimText = '';
@@ -631,25 +671,182 @@ function commitInterim(){
   interimText = ''; segStart = null; $('#interim').textContent = '';
 }
 
+/* ============ 제미나이 준실시간 전사 ============ */
+const PCM_HZ = 16000;
+const pcm = { arr: null, n: 0, t0: 0, sq: 0, blocks: 0, pos: 0, acc: 0, cnt: 0 };
+let chunkSec = 20, activeEngine = null;
+const txQueue = [], failedJobs = [];
+let txBusy = false, txBanner = false;
+function getEngine(){ const e = localStorage.getItem('meetnote.engine'); return ['gemini', 'browser', 'off'].includes(e) ? e : (getKey() ? 'gemini' : 'browser'); }
+function getChunkSec(){ return Math.min(60, Math.max(5, +(localStorage.getItem('meetnote.chunk') || 20))); }
+function chooseEngine(){
+  let e = getEngine();
+  if(e === 'gemini' && !getKey()){ e = SR ? 'browser' : 'off'; showBanner('⚠ 제미나이 API 키가 없어 기기 음성인식으로 시작합니다. (⚙ 설정에서 키를 등록하면 더 정확한 전사를 쓸 수 있어요)', true); }
+  if(e === 'browser' && !SR) e = 'off';
+  return e;
+}
+function pcmReset(){
+  chunkSec = getChunkSec();
+  pcm.arr = new Int16Array(PCM_HZ * (chunkSec + 8)); pcm.n = 0; pcm.sq = 0; pcm.pos = 0; pcm.acc = 0; pcm.cnt = 0; pcm.t0 = now();
+}
+function onPCM(e){
+  pcm.blocks++;
+  if(mode !== 'recording' || activeEngine !== 'gemini' || !pcm.arr) return;
+  const x = e.inputBuffer.getChannelData(0), ratio = e.inputBuffer.sampleRate / PCM_HZ;
+  let bsq = 0;
+  for(let i = 0; i < x.length; i++){
+    const v = x[i]; bsq += v * v; pcm.acc += v; pcm.cnt++; pcm.pos += 1;
+    if(pcm.pos >= ratio){
+      pcm.pos -= ratio; const y = pcm.acc / pcm.cnt; pcm.acc = 0; pcm.cnt = 0;
+      if(pcm.n < pcm.arr.length){ pcm.arr[pcm.n++] = Math.max(-1, Math.min(1, y)) * 32767; pcm.sq += y * y; }
+    }
+  }
+  // 정해진 길이가 지나면, 말이 잠깐 쉬는 지점에서 끊어 단어가 잘리지 않게 함 (최대 +6초)
+  const target = chunkSec * PCM_HZ;
+  if(pcm.n >= target){
+    const avg = Math.sqrt(pcm.sq / pcm.n), blockRms = Math.sqrt(bsq / x.length);
+    if(blockRms < avg * 0.4 || pcm.n >= target + 6 * PCM_HZ) flushPCM();
+  }
+}
+function flushPCM(final){
+  if(!pcm.arr || !pcm.n) return;
+  const n = pcm.n, t0 = pcm.t0, rms = Math.sqrt(pcm.sq / n);
+  const samples = pcm.arr.slice(0, n);
+  pcm.n = 0; pcm.sq = 0; pcm.t0 = t0 + n / PCM_HZ;
+  if(n < PCM_HZ * (final ? 0.6 : 1.5) || rms < 0.002) return;   // 너무 짧거나 무음이면 보내지 않음
+  enqueueTx({ sid: S.sid, blob: encodeWav(samples), t0, t1: t0 + n / PCM_HZ, tries: 0 });
+}
+function encodeWav(int16){
+  const buf = new ArrayBuffer(44 + int16.length * 2), v = new DataView(buf);
+  const w = (o, str) => { for(let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + int16.length * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, PCM_HZ, true); v.setUint32(28, PCM_HZ * 2, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, int16.length * 2, true);
+  new Int16Array(buf, 44).set(int16);
+  return new Blob([buf], { type: 'audio/wav' });
+}
+// 시작 후 3.5초 안에 오디오가 들어오지 않으면 기기 음성인식으로 자동 전환
+function watchPCM(){
+  const b0 = pcm.blocks;
+  setTimeout(() => {
+    if(mode === 'recording' && activeEngine === 'gemini' && pcm.blocks === b0){
+      if(SR){ activeEngine = 'browser'; startRecog(); showBanner('⚠ 제미나이 전사용 오디오를 시작하지 못해 기기 음성인식으로 전환했습니다.', true); }
+      else showBanner('⚠ 실시간 전사를 시작하지 못했습니다. 녹음은 정상 저장되며, 끝난 뒤 ‘AI 회의록’으로 전사할 수 있습니다.', true);
+      renderTxStat(); setStatus();
+    }
+  }, 3500);
+}
+function enqueueTx(job){ txQueue.push(job); renderTxStat(); pumpTx(); }
+async function pumpTx(){
+  if(txBusy) return;
+  txBusy = true; renderTxStat();
+  while(txQueue.length){
+    const job = txQueue.shift(); renderTxStat();
+    try{
+      await runTx(job);
+      if(txBanner){ hideBanner(); txBanner = false; }
+    } catch(e){
+      job.tries++;
+      const auth = e.status === 401 || e.status === 403 || e.status === 404;
+      const fatal = auth || e.status === 400;
+      if(!fatal && job.tries < 3){ await sleep(e.status === 429 ? 20000 : 3000 * job.tries); txQueue.unshift(job); }
+      else {
+        failedJobs.push(job);
+        if(auth){ while(txQueue.length) failedJobs.push(txQueue.shift()); }
+        txBanner = true;
+        showBanner('⚠ 제미나이 전사 실패: ' + String(e.message || e).split('\n')[0] + ' · 녹음은 계속 저장되며, 끝난 뒤 ‘AI 회의록’ 정밀 정리로 복구할 수 있습니다.', true);
+      }
+    }
+    renderTxStat();
+  }
+  txBusy = false; renderTxStat();
+}
+function retryFailed(){
+  const js = failedJobs.splice(0);
+  js.forEach(j => { j.tries = 0; txQueue.push(j); });
+  hideBanner(); txBanner = false; renderTxStat(); pumpTx(); toast('🔄 실패한 구간을 다시 전사합니다.');
+}
+const TX_SCHEMA = { type: 'ARRAY', items: { type: 'OBJECT', properties: { t: { type: 'NUMBER' }, speaker: { type: 'STRING' }, text: { type: 'STRING' }, turn: { type: 'BOOLEAN' } }, required: ['text'] } };
+function liveTxPrompt(job){
+  const names = S.speakers.map(x => x.name), m = S.meta;
+  const prev = S.lines.filter(l => l.t < job.t0 + 1).slice(-3).map(l => (spkName(l.sp) ? spkName(l.sp) + ': ' : '') + l.text).join('\n');
+  return `현장 간담회(${m.title || '제목 미입력'}, ${m.place || '장소 미입력'}) 녹음의 일부(약 ${Math.round(job.t1 - job.t0)}초)입니다. 한국어로 전사하세요.
+${names.length ? `[알려진 발언자] ${names.join(', ')}\n` : ''}${m.attendees ? `[참석자 정보] ${m.attendees}\n` : ''}${prev ? `[직전 발언 — 문맥 참고용이며 다시 출력하지 마세요]\n${prev}\n` : ''}
+[규칙]
+1. 실제로 들리는 말만 있는 그대로 옮기세요. 요약·추측·보충을 하지 마세요. 말소리가 없거나 잡음뿐이면 빈 배열 []만 출력하세요.
+2. 발언자가 바뀔 때마다 항목을 나누세요. 한 항목은 한 사람의 연속된 발언(문장 몇 개 이내)입니다.
+3. t: 이 파일 시작을 0초로 한 항목의 시작 시각(초).
+4. speaker: 알려진 발언자 이름 중에서 목소리·자기소개·호칭으로 확실할 때만 그 이름을 쓰고, 확실하지 않으면 빈 문자열로 두세요. 이름을 새로 만들지 마세요.
+5. turn: 바로 앞 항목과 발언자가 다른 것으로 들리면 true.
+6. "어", "음" 같은 군말은 빼되 의미는 바꾸지 마세요. 알아듣기 어려운 부분은 (불명확)으로 적으세요.
+7. 파일의 처음이나 끝에서 잘린 단어는 들리는 부분만 적으세요.`;
+}
+function spkAt(t){ let id = null; for(const e of S.spkLog){ if(e.t <= t + 0.3) id = e.sp; else break; } return id && spk(id) ? id : null; }
+async function runTx(job){
+  const b64 = await blobToB64(job.blob);
+  const r = await generate([{ inline_data: { mime_type: 'audio/wav', data: b64 } }, { text: liveTxPrompt(job) }], { json: true, schema: TX_SCHEMA });
+  if(job.sid !== S.sid) return;           // 그 사이 새 회의를 시작했다면 버림
+  let arr; try{ arr = JSON.parse(r.text); } catch { arr = []; }
+  if(!Array.isArray(arr)) arr = [];
+  const dur = job.t1 - job.t0; let added = 0;
+  for(const it of arr){
+    const text = String(it && it.text || '').replace(/\s+/g, ' ').trim();
+    if(!text || /^[\s.,…·\-]+$/.test(text)) continue;
+    const last = S.lines[S.lines.length - 1];
+    if(last && last.text === text) continue;     // 같은 말이 그대로 반복되면 환각으로 보고 제외
+    const t = job.t0 + Math.min(Math.max(Number(it.t) || 0, 0), dur);
+    let sp = spkAt(t);                              // 현장에서 직접 누른 발언자가 우선
+    const nm = String(it.speaker || '').trim();
+    if(!sp && nm.length >= 2){ const f = S.speakers.find(x => x.name === nm) || S.speakers.find(x => x.name.includes(nm) || nm.includes(x.name)); if(f) sp = f.id; }
+    addLine(t, text, { sp, turn: !!it.turn && added > 0, sorted: true });
+    added++;
+  }
+}
+function renderTxStat(){
+  const el = $('#txStat'); if(!el) return;
+  const eng = (mode !== 'idle' && activeEngine) ? activeEngine : getEngine();
+  let t = { gemini: '☁ 제미나이 전사', browser: '📱 기기 전사', off: '⛔ 전사 꺼짐' }[eng] || '';
+  if(eng === 'gemini'){ const q = txQueue.length + (txBusy ? 1 : 0); if(q) t += ` · ⏳ 전사 중 ${q}`; }
+  if(failedJobs.length) t += ` · ⚠ 실패 ${failedJobs.length}건 (눌러서 재시도)`;
+  el.textContent = t; el.classList.toggle('warn', !!failedJobs.length);
+  el.title = failedJobs.length ? '눌러서 실패한 구간을 다시 전사합니다' : '눌러서 전사 방식 변경';
+}
+$('#txStat').onclick = () => { if(failedJobs.length) retryFailed(); else openSettings(); };
+// 다음 전사까지 남은 시간 안내
+setInterval(() => {
+  if(activeEngine !== 'gemini') return;
+  const q = txQueue.length + (txBusy ? 1 : 0); let msg = '';
+  if(mode === 'recording'){ const left = Math.max(0, Math.ceil(chunkSec - pcm.n / PCM_HZ)); msg = `🎙 듣는 중… 약 ${left}초 뒤 이 구간이 글자로 나타납니다` + (q ? ` · 전사 대기 ${q}` : ''); }
+  else if(q) msg = `⏳ 남은 구간 전사 중… (${q})`;
+  if(interimEl.textContent !== msg){ interimEl.textContent = msg; if(msg && stick) linesEl.scrollTop = linesEl.scrollHeight; }
+}, 500);
+
 /* ============ 전사 창 ============ */
 const linesEl = $('#lines'), interimEl = $('#interim');
 const isTouch = matchMedia('(hover: none)').matches;
 let stick = true;
-function addLine(t, text){
-  const l = { id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t, text, sp: S.curSpk };
-  S.lines.push(l); renderLine(l); save(); autoScroll(); updateCount();
+function addLine(t, text, extra){
+  const l = { id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t, text, sp: (extra && 'sp' in extra) ? extra.sp : S.curSpk };
+  if(extra && extra.turn) l.turn = true;
+  let i = S.lines.length;
+  if(extra && extra.sorted){ while(i > 0 && S.lines[i - 1].t > t) i--; }   // 늦게 도착한 구간도 시간 순서대로 끼워 넣음
+  S.lines.splice(i, 0, l);
+  const ref = i < S.lines.length - 1 ? linesEl.querySelector(`[data-id="${S.lines[i + 1].id}"]`) : null;
+  renderLine(l, ref || interimEl);
+  if(ref) repaintAllSp();
+  save(); autoScroll(); updateCount();
 }
-function renderLine(l){
+function renderLine(l, ref){
   $('#empty').hidden = true;
   const d = document.createElement('div');
   d.className = 'line' + (l.star ? ' star' : ''); d.dataset.id = l.id;
   d.innerHTML = `<button class="ts" title="이 시점부터 다시 듣기">${fmt(l.t)}</button><button class="sp" title="발언자 바꾸기"></button><div class="tx" contenteditable="${isTouch ? 'false' : 'true'}" spellcheck="false"></div>` +
     `<div class="la"><button data-act="star" title="중요 표시">⭐</button>${isTouch ? '<button data-act="edit" title="이 발언 고치기">✏</button>' : ''}<button data-act="memo" title="이 발언을 메모장으로 보내기">➜ 메모</button></div>`;
   d.querySelector('.tx').textContent = l.text;
-  linesEl.insertBefore(d, interimEl);
+  linesEl.insertBefore(d, ref || interimEl);
   paintSp(d, l);
 }
-function renderAllLines(){ $$('#lines .line').forEach(x => x.remove()); S.lines.forEach(renderLine); $('#empty').hidden = S.lines.length > 0; updateCount(); }
+function renderAllLines(){ $$('#lines .line').forEach(x => x.remove()); S.lines.forEach(l => renderLine(l)); $('#empty').hidden = S.lines.length > 0; updateCount(); }
 function updateCount(){ $('#lineCount').textContent = S.lines.length ? `발언 ${S.lines.length}개` : ''; }
 function nearBottom(){ return linesEl.scrollHeight - linesEl.scrollTop - linesEl.clientHeight < 90; }
 function autoScroll(){ if(stick) linesEl.scrollTop = linesEl.scrollHeight; else $('#toBottom').hidden = false; }
@@ -686,7 +883,7 @@ function paintSp(d, l){
   b.textContent = n || '발언자?'; b.classList.toggle('unset', !n);
   if(n){ const [c, w] = spkPal(l.sp); b.style.setProperty('--c', c); b.style.setProperty('--w', w); }
   // 발언자가 바뀌는 지점에 구분선
-  const i = S.lines.indexOf(l); d.classList.toggle('newspk', i > 0 && S.lines[i - 1].sp !== l.sp);
+  const i = S.lines.indexOf(l); d.classList.toggle('newspk', i > 0 && (S.lines[i - 1].sp !== l.sp || !!l.turn));
 }
 function repaintAllSp(){ $$('#lines .line').forEach(d => { const l = S.lines.find(x => x.id === d.dataset.id); if(l) paintSp(d, l); }); }
 function parseAttendees(t){
@@ -700,7 +897,9 @@ function addSpeaker(name){
   S.speakers.push({ id, name }); return id;
 }
 function setCur(id, quiet){
-  S.curSpk = id || null; save(); renderSpkBar();
+  const nid = id || null;
+  if(nid !== S.curSpk || !S.spkLog.length){ S.spkLog.push({ t: now(), sp: nid }); if(S.spkLog.length > 3000) S.spkLog.splice(0, 500); }
+  S.curSpk = nid; save(); renderSpkBar();
   if(!quiet) toast(id ? `🎤 지금 발언: ${spkName(id)}` : '🎤 발언자 미지정', 1200);
 }
 function renderSpkBar(){
@@ -825,7 +1024,7 @@ async function seekTo(t){
 function setStatus(msg){
   const st = $('#status');
   st.className = mode === 'recording' ? 'on' : mode === 'paused' ? 'pause' : '';
-  $('#statusTx').textContent = msg || (mode === 'recording' ? (SR ? (recogWanted ? '녹음·전사 중' : '녹음 중(전사 꺼짐)') : '녹음 중') : mode === 'paused' ? '일시정지' : (S.segments.length ? '녹음 종료됨' : '대기 중'));
+  $('#statusTx').textContent = msg || (mode === 'recording' ? (activeEngine === 'gemini' ? '녹음·제미나이 전사 중' : activeEngine === 'browser' ? (recogWanted ? '녹음·전사 중' : '녹음 중(전사 꺼짐)') : '녹음 중(전사 꺼짐)') : mode === 'paused' ? '일시정지' : (S.segments.length ? '녹음 종료됨' : '대기 중'));
 }
 function updateUI(){
   const b = $('#btnRec');
@@ -925,12 +1124,12 @@ $('#btnNew').onclick = async () => {
   if((S.lines.length || S.memo || S.segments.length) && !confirm('현재 기록을 지우고 새 회의를 시작할까요?\n\n지우기 전에 ‘💾 저장’으로 기록과 녹음 파일을 PC에 보관하시길 권합니다.')) return;
   await IDB.delSid(S.sid);
   for(const k in segBlobs) delete segBlobs[k];
-  S = fresh(); playerSeg = null; audio.removeAttribute('src');
+  txQueue.length = 0; failedJobs.length = 0; S = fresh(); playerSeg = null; audio.removeAttribute('src');
   spkEdit = false; fillMeta(); renderAllLines(); renderSpkBar(); refreshPlayer(); renderResult(); saveNow(); updateUI();
   $('#timer').textContent = '00:00:00'; showTab('memo'); $('#title').focus();
   toast('🆕 새 회의를 시작합니다.');
 };
-window.addEventListener('beforeunload', e => { saveNow(); if(mode !== 'idle'){ e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('beforeunload', e => { saveNow(); if(mode !== 'idle' || txBusy || txQueue.length){ e.preventDefault(); e.returnValue = ''; } });
 
 /* ============ 제미나이 API ============ */
 const API = 'https://generativelanguage.googleapis.com';
@@ -1187,8 +1386,13 @@ function fillModels(list){
 function openSettings(){
   $('#keyIn').value = getKey(); $('#keyMsg').textContent = getKey() ? '등록된 키가 있습니다.' : '';
   let cached = []; try{ cached = JSON.parse(localStorage.getItem('meetnote.models') || '[]'); } catch {}
-  fillModels(cached); openModal('#mSettings');
+  fillModels(cached);
+  const en = document.querySelector(`input[name=engine][value=${getEngine()}]`); if(en) en.checked = true;
+  $('#chunkSel').value = String(getChunkSec());
+  openModal('#mSettings');
 }
+$$('input[name=engine]').forEach(r => r.addEventListener('change', e => { localStorage.setItem('meetnote.engine', e.target.value); renderTxStat(); if(mode !== 'idle') toast('전사 방식은 다음 ‘계속 녹음’부터 적용됩니다.'); }));
+$('#chunkSel').onchange = e => localStorage.setItem('meetnote.chunk', e.target.value);
 $('#btnSettings').onclick = openSettings;
 $('#keyShow').onclick = () => { const i = $('#keyIn'); i.type = i.type === 'password' ? 'text' : 'password'; };
 $('#keyTest').onclick = async () => {
@@ -1208,7 +1412,7 @@ $('#keyTest').onclick = async () => {
 };
 $('#modelSel').onchange = e => localStorage.setItem('meetnote.model', e.target.value);
 $('#keyDel').onclick = () => { if(confirm('저장된 API 키를 삭제할까요?')){ localStorage.removeItem('meetnote.key'); $('#keyIn').value = ''; $('#keyMsg').textContent = '삭제했습니다.'; } };
-$('#setClose').onclick = () => { const k = $('#keyIn').value.trim(); if(k) localStorage.setItem('meetnote.key', k); $('#mSettings').hidden = true; if(!$('#aiView').hidden) $('#keyWarn').hidden = !!getKey(); };
+$('#setClose').onclick = () => { const k = $('#keyIn').value.trim(); if(k) localStorage.setItem('meetnote.key', k); $('#mSettings').hidden = true; renderTxStat(); if(!$('#aiView').hidden) $('#keyWarn').hidden = !!getKey(); };
 $('#btnHelp').onclick = () => openModal('#mHelp');
 $$('[data-close]').forEach(b => b.addEventListener('click', () => closeModal(b)));
 $$('.modal').forEach(m => m.addEventListener('click', e => { if(e.target === m && m.id !== 'mConfirm') m.hidden = true; }));
@@ -1235,8 +1439,9 @@ $('#btnStop').onclick = stopRecording;
   const lw = localStorage.getItem('meetnote.left'); if(lw) document.documentElement.style.setProperty('--left', lw);
   if(!S.meta.date) S.meta.date = todayStr();
   if(!Array.isArray(S.speakers)) S.speakers = [];
+  if(!Array.isArray(S.spkLog)) S.spkLog = [];
   if(S.curSpk === undefined || (S.curSpk && !spk(S.curSpk))) S.curSpk = null;
-  fillMeta(); renderAllLines(); renderSpkBar(); renderResult(); updateUI();
+  fillMeta(); renderAllLines(); renderSpkBar(); renderResult(); renderTxStat(); updateUI();
   $('#timer').textContent = fmtClock(S.elapsed);
   if(navigator.share) $('#shareBtn').hidden = false;
   if(isTouch){ $('#editHint').textContent = '✏ 버튼으로 고치고, 시각을 누르면 다시 듣기'; }
