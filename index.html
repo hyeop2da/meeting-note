@@ -520,14 +520,14 @@ async function startRecording(){
   rec.start(5000);           // 5초마다 조각 저장
   startMeter(stream);
   mode = 'recording'; runStart = performance.now(); lastResultAt = performance.now(); warnedNoText = false;
-  pcmReset(); if(activeEngine === 'gemini') watchPCM(); renderTxStat();
+  resetStats(); pcmReset(); if(activeEngine === 'gemini') watchPCM(); renderTxStat();
   try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
   if(activeEngine === 'browser') startRecog();
   keepAwake(true);
   save(); updateUI();
 }
 function pauseRecording(){
-  flushPCM(true);
+  flushPCM(true); endRecSource();
   S.elapsed = now(); mode = 'paused';
   try{ recorder.pause(); } catch {}
   stopRecog(); save(); updateUI();
@@ -535,13 +535,13 @@ function pauseRecording(){
 function resumeRecording(){
   try{ recorder.resume(); } catch {}
   mode = 'recording'; runStart = performance.now();
-  activeEngine = chooseEngine(); prepAudioCtx(); pcmReset(); if(activeEngine === 'gemini') watchPCM();
+  activeEngine = chooseEngine(); prepAudioCtx(); pcmReset(); if(activeEngine === 'gemini'){ watchPCM(); if(txSource === 'rec') startRecSource(); }
   if(activeEngine === 'browser') startRecog();
   renderTxStat(); updateUI();
 }
 function stopRecording(){
   if(mode === 'idle') return;
-  flushPCM(true);
+  flushPCM(true); endRecSource();
   S.elapsed = now(); mode = 'idle';
   stopRecog(); commitInterim();
   try{ recorder.stop(); } catch {}
@@ -569,7 +569,7 @@ document.addEventListener('visibilitychange', () => {
   const track = stream && stream.getAudioTracks()[0];
   const dead = !recorder || recorder.state === 'inactive' || !track || track.readyState === 'ended';
   if(dead){
-    flushPCM(true); S.elapsed = now(); mode = 'idle'; stopRecog(); commitInterim(); stopMeter(); keepAwake(false);
+    flushPCM(true); endRecSource(); S.elapsed = now(); mode = 'idle'; stopRecog(); commitInterim(); stopMeter(); keepAwake(false);
     try{ recorder && recorder.state !== 'inactive' && recorder.stop(); } catch {}
     save(); updateUI();
     showBanner('⚠ 화면을 벗어난 동안 녹음이 멈췄습니다. 그 전까지의 녹음은 안전하게 저장되었습니다. ‘● 이어서 녹음’을 눌러 계속하세요.', true);
@@ -677,6 +677,9 @@ const pcm = { arr: null, n: 0, t0: 0, sq: 0, blocks: 0, pos: 0, acc: 0, cnt: 0 }
 let chunkSec = 20, activeEngine = null;
 const txQueue = [], failedJobs = [];
 let txBusy = false, txBanner = false;
+let txSource = 'pcm', recChunk = null, recTimer = null, silentRun = 0, lvl = 0;
+const stats = { chunks: 0, silent: 0, sent: 0, lines: 0, empty: 0, emptyRun: 0, decodeFail: 0 };
+function resetStats(){ Object.keys(stats).forEach(k => stats[k] = 0); txSource = 'pcm'; silentRun = 0; lvl = 0; }
 function getEngine(){ const e = localStorage.getItem('meetnote.engine'); return ['gemini', 'browser', 'off'].includes(e) ? e : (getKey() ? 'gemini' : 'browser'); }
 function getChunkSec(){ return Math.min(60, Math.max(5, +(localStorage.getItem('meetnote.chunk') || 20))); }
 function chooseEngine(){
@@ -694,8 +697,12 @@ function onPCM(e){
   if(mode !== 'recording' || activeEngine !== 'gemini' || !pcm.arr) return;
   const x = e.inputBuffer.getChannelData(0), ratio = e.inputBuffer.sampleRate / PCM_HZ;
   let bsq = 0;
+  for(let i = 0; i < x.length; i++) bsq += x[i] * x[i];
+  const blockRms = Math.sqrt(bsq / x.length);
+  lvl = Math.max(blockRms, lvl * 0.85);
+  if(txSource !== 'pcm') return;                    // 다른 입력 방식으로 전환된 경우 소리 수준만 갱신
   for(let i = 0; i < x.length; i++){
-    const v = x[i]; bsq += v * v; pcm.acc += v; pcm.cnt++; pcm.pos += 1;
+    const v = x[i]; pcm.acc += v; pcm.cnt++; pcm.pos += 1;
     if(pcm.pos >= ratio){
       pcm.pos -= ratio; const y = pcm.acc / pcm.cnt; pcm.acc = 0; pcm.cnt = 0;
       if(pcm.n < pcm.arr.length){ pcm.arr[pcm.n++] = Math.max(-1, Math.min(1, y)) * 32767; pcm.sq += y * y; }
@@ -704,17 +711,77 @@ function onPCM(e){
   // 정해진 길이가 지나면, 말이 잠깐 쉬는 지점에서 끊어 단어가 잘리지 않게 함 (최대 +6초)
   const target = chunkSec * PCM_HZ;
   if(pcm.n >= target){
-    const avg = Math.sqrt(pcm.sq / pcm.n), blockRms = Math.sqrt(bsq / x.length);
-    if(blockRms < avg * 0.4 || pcm.n >= target + 6 * PCM_HZ) flushPCM();
+    const avg = Math.sqrt(pcm.sq / pcm.n);
+    if(blockRms <= avg * 0.4 || pcm.n >= target + 6 * PCM_HZ) flushPCM();
   }
 }
 function flushPCM(final){
   if(!pcm.arr || !pcm.n) return;
-  const n = pcm.n, t0 = pcm.t0, rms = Math.sqrt(pcm.sq / n);
-  const samples = pcm.arr.slice(0, n);
+  const n = pcm.n, t0 = pcm.t0, samples = pcm.arr.slice(0, n);
   pcm.n = 0; pcm.sq = 0; pcm.t0 = t0 + n / PCM_HZ;
-  if(n < PCM_HZ * (final ? 0.6 : 1.5) || rms < 0.002) return;   // 너무 짧거나 무음이면 보내지 않음
-  enqueueTx({ sid: S.sid, blob: encodeWav(samples), t0, t1: t0 + n / PCM_HZ, tries: 0 });
+  if(txSource === 'pcm') submitSamples(samples, t0, final);
+}
+// 한 구간의 소리(16kHz Int16)를 검사·보정해서 전사 대기열에 넣음
+function submitSamples(i16, t0, final){
+  const n = i16.length;
+  if(n < PCM_HZ * (final ? 0.6 : 1.5)) return;
+  let peak = 0, sq = 0;
+  for(let i = 0; i < n; i++){ const v = i16[i], a = v < 0 ? -v : v; if(a > peak) peak = a; sq += v * v; }
+  const rms = Math.sqrt(sq / n) / 32768;
+  stats.chunks++;
+  if(rms < 0.0003){                                  // 사실상 완전한 무음
+    stats.silent++; silentRun++;
+    if(txSource === 'pcm' && silentRun >= 2 && mode === 'recording' && stream){ txSource = 'rec'; startRecSource(); toast('🔄 전사용 소리 입력 방식을 전환했습니다.', 3000); }
+    else if(txSource === 'rec' && silentRun >= 3){ txBanner = true; showBanner('⚠ 마이크로 들어오는 소리가 거의 없습니다. 마이크 가까이에서 말씀하시거나, 사파리의 마이크 권한과 기기 음량·마이크 가림 여부를 확인해 주세요.', true); }
+    return;
+  }
+  silentRun = 0;
+  if(peak < 16000){ const g = Math.min(30, 26000 / Math.max(peak, 1)); for(let i = 0; i < n; i++) i16[i] = Math.max(-32768, Math.min(32767, i16[i] * g)); }   // 작은 소리 키우기
+  stats.sent++;
+  enqueueTx({ sid: S.sid, blob: encodeWav(i16), t0, t1: t0 + n / PCM_HZ, tries: 0 });
+}
+
+/* ---- 보조 입력 방식: 녹음기로 구간 파일을 만들어 해독 (웹오디오 입력이 무음일 때 자동 전환) ---- */
+function startRecSource(){
+  txSource = 'rec'; clearInterval(recTimer);
+  beginRecChunk(); recTimer = setInterval(rotateRecChunk, chunkSec * 1000);
+}
+function beginRecChunk(){
+  if(!stream) return;
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+  let r; try{ r = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : {}); } catch { return; }
+  const ch = { rec: r, parts: [], t0: now(), mime: r.mimeType || mime || 'audio/mp4' };
+  r.ondataavailable = e => { if(e.data && e.data.size) ch.parts.push(e.data); };
+  r.onstop = () => handleRecChunk(ch);
+  try{ r.start(); recChunk = ch; } catch {}
+}
+function endRecChunk(ch){ if(!ch) return; ch.t1 = now(); try{ if(ch.rec.state !== 'inactive') ch.rec.stop(); } catch {} }
+function rotateRecChunk(){
+  if(mode !== 'recording' || txSource !== 'rec') return;
+  const old = recChunk; recChunk = null; beginRecChunk(); endRecChunk(old);
+}
+function endRecSource(){ clearInterval(recTimer); const ch = recChunk; recChunk = null; endRecChunk(ch); }
+async function handleRecChunk(ch){
+  const t1 = ch.t1 ?? now();
+  if(t1 - ch.t0 < 1 || !ch.parts.length) return;
+  const blob = new Blob(ch.parts, { type: ch.mime });
+  try{ submitSamples(await decodeTo16k(blob), ch.t0, false); }
+  catch{
+    stats.decodeFail++; stats.chunks++; stats.sent++;      // 해독 실패 시 원본 파일을 그대로 전송
+    enqueueTx({ sid: S.sid, blob, t0: ch.t0, t1, tries: 0 });
+  }
+}
+async function decodeTo16k(blob){
+  const ab = await blob.arrayBuffer();
+  const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const dec = new Off(1, PCM_HZ, PCM_HZ);
+  const buf = await new Promise((res, rej) => { const pr = dec.decodeAudioData(ab, res, rej); if(pr && pr.catch) pr.catch(rej); });
+  const off = new Off(1, Math.max(1, Math.ceil(buf.duration * PCM_HZ)), PCM_HZ);
+  const src = off.createBufferSource(); src.buffer = buf; src.connect(off.destination); src.start(0);
+  const out = await new Promise((res, rej) => { const pr = off.startRendering(); if(pr && pr.then) pr.then(res, rej); else off.oncomplete = ev => res(ev.renderedBuffer); });
+  const f = out.getChannelData(0), i16 = new Int16Array(f.length);
+  for(let i = 0; i < f.length; i++) i16[i] = Math.max(-1, Math.min(1, f[i])) * 32767;
+  return i16;
 }
 function encodeWav(int16){
   const buf = new ArrayBuffer(44 + int16.length * 2), v = new DataView(buf);
@@ -743,8 +810,8 @@ async function pumpTx(){
   while(txQueue.length){
     const job = txQueue.shift(); renderTxStat();
     try{
-      await runTx(job);
-      if(txBanner){ hideBanner(); txBanner = false; }
+      const added = await runTx(job);
+      if(added && txBanner){ hideBanner(); txBanner = false; }
     } catch(e){
       job.tries++;
       const auth = e.status === 401 || e.status === 403 || e.status === 404;
@@ -773,7 +840,7 @@ function liveTxPrompt(job){
   return `현장 간담회(${m.title || '제목 미입력'}, ${m.place || '장소 미입력'}) 녹음의 일부(약 ${Math.round(job.t1 - job.t0)}초)입니다. 한국어로 전사하세요.
 ${names.length ? `[알려진 발언자] ${names.join(', ')}\n` : ''}${m.attendees ? `[참석자 정보] ${m.attendees}\n` : ''}${prev ? `[직전 발언 — 문맥 참고용이며 다시 출력하지 마세요]\n${prev}\n` : ''}
 [규칙]
-1. 실제로 들리는 말만 있는 그대로 옮기세요. 요약·추측·보충을 하지 마세요. 말소리가 없거나 잡음뿐이면 빈 배열 []만 출력하세요.
+1. 사람 말소리가 조금이라도 들리면 소리가 작거나 멀어도 들리는 만큼 모두 옮기세요. 요약·추측·보충은 하지 마세요. 사람 말소리가 전혀 없을 때만 빈 배열 []을 출력하세요.
 2. 발언자가 바뀔 때마다 항목을 나누세요. 한 항목은 한 사람의 연속된 발언(문장 몇 개 이내)입니다.
 3. t: 이 파일 시작을 0초로 한 항목의 시작 시각(초).
 4. speaker: 알려진 발언자 이름 중에서 목소리·자기소개·호칭으로 확실할 때만 그 이름을 쓰고, 확실하지 않으면 빈 문자열로 두세요. 이름을 새로 만들지 마세요.
@@ -784,9 +851,10 @@ ${names.length ? `[알려진 발언자] ${names.join(', ')}\n` : ''}${m.attendee
 function spkAt(t){ let id = null; for(const e of S.spkLog){ if(e.t <= t + 0.3) id = e.sp; else break; } return id && spk(id) ? id : null; }
 async function runTx(job){
   const b64 = await blobToB64(job.blob);
-  const r = await generate([{ inline_data: { mime_type: 'audio/wav', data: b64 } }, { text: liveTxPrompt(job) }], { json: true, schema: TX_SCHEMA });
-  if(job.sid !== S.sid) return;           // 그 사이 새 회의를 시작했다면 버림
-  let arr; try{ arr = JSON.parse(r.text); } catch { arr = []; }
+  const mime = (job.blob.type || 'audio/wav').split(';')[0];
+  const r = await generate([{ inline_data: { mime_type: mime, data: b64 } }, { text: liveTxPrompt(job) }], { json: true, schema: TX_SCHEMA });
+  if(job.sid !== S.sid) return 0;           // 그 사이 새 회의를 시작했다면 버림
+  let arr; try{ arr = JSON.parse(r.text); } catch { throw new Error('제미나이 응답을 해석하지 못했습니다'); }
   if(!Array.isArray(arr)) arr = [];
   const dur = job.t1 - job.t0; let added = 0;
   for(const it of arr){
@@ -801,6 +869,12 @@ async function runTx(job){
     addLine(t, text, { sp, turn: !!it.turn && added > 0, sorted: true });
     added++;
   }
+  if(added){ stats.lines += added; stats.emptyRun = 0; }
+  else {
+    stats.empty++; stats.emptyRun++;
+    if(stats.emptyRun >= 3 && stats.lines === 0){ txBanner = true; showBanner('⚠ 제미나이가 말소리를 찾지 못하고 있습니다. 소리가 너무 작거나 멀 수 있습니다. 마이크 가까이에서 말씀해 보시고, 화면 아래 ‘입력’ 막대가 움직이는지 확인해 주세요.', true); }
+  }
+  return added;
 }
 function renderTxStat(){
   const el = $('#txStat'); if(!el) return;
@@ -812,11 +886,16 @@ function renderTxStat(){
   el.title = failedJobs.length ? '눌러서 실패한 구간을 다시 전사합니다' : '눌러서 전사 방식 변경';
 }
 $('#txStat').onclick = () => { if(failedJobs.length) retryFailed(); else openSettings(); };
-// 다음 전사까지 남은 시간 안내
+// 다음 전사까지 남은 시간 + 입력 소리 + 진행 현황
 setInterval(() => {
   if(activeEngine !== 'gemini') return;
   const q = txQueue.length + (txBusy ? 1 : 0); let msg = '';
-  if(mode === 'recording'){ const left = Math.max(0, Math.ceil(chunkSec - pcm.n / PCM_HZ)); msg = `🎙 듣는 중… 약 ${left}초 뒤 이 구간이 글자로 나타납니다` + (q ? ` · 전사 대기 ${q}` : ''); }
+  if(mode === 'recording'){
+    const used = txSource === 'rec' ? (recChunk ? now() - recChunk.t0 : 0) : pcm.n / PCM_HZ;
+    const left = Math.max(0, Math.ceil(chunkSec - used));
+    const L = Math.min(8, Math.round(lvl * 40)), bar = '▮'.repeat(L) + '▯'.repeat(8 - L);
+    msg = `🎙 듣는 중… 약 ${left}초 뒤 글자로 나타납니다 · 입력 ${bar} · 구간 ${stats.chunks}(전송 ${stats.sent}·무음 ${stats.silent}) · 글자 ${stats.lines}줄` + (q ? ` · 대기 ${q}` : '');
+  }
   else if(q) msg = `⏳ 남은 구간 전사 중… (${q})`;
   if(interimEl.textContent !== msg){ interimEl.textContent = msg; if(msg && stick) linesEl.scrollTop = linesEl.scrollHeight; }
 }, 500);
