@@ -240,7 +240,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
         <b>시작하는 방법</b>
         <ol>
           <li>위의 <b>‘● 녹음 시작’</b>을 누르고, 마이크 사용을 <b>허용</b>하세요.</li>
-          <li>말하는 내용이 이 창에 글자로 나타납니다. (제미나이 전사: 약 30초 간격으로 한꺼번에 / 기기 음성인식: 즉시)</li>
+          <li>말하는 내용이 이 창에 글자로 나타납니다. (실시간 전사: 말한 뒤 1~3초 / 구간 전송: 약 30초 간격)</li>
           <li><b>발언자가 바뀌면 위의 이름 버튼</b>을 눌러 주세요. 이후 발언에 이름이 붙습니다. (회의 정보에 참석자를 적어 두면 ‘📋 참석자 명단 불러오기’로 버튼이 한 번에 만들어집니다)</li>
           <li>오른쪽 메모장에 자유롭게 메모하세요. <b>🕐 시각</b> 버튼은 현재 시각을, <b>⭐ 방금 발언</b> 버튼은 방금 나온 말을 메모로 가져옵니다.</li>
           <li>휴식 시간에는 <b>일시정지</b>, 간담회가 끝나면 <b>‘■ 종료’</b>를 누르세요.</li>
@@ -367,8 +367,11 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
       <span class="small" id="keyMsg"></span>
     </div>
     <label>실시간 전사 방식</label>
+    <label class="opt"><input type="radio" name="engine" value="live">
+      <div><b>⚡ 제미나이 실시간(Live) (권장)</b>
+      <span>마이크 소리를 끊김 없이 제미나이로 흘려보내 말하는 즉시(1~3초) 글자로 바꿉니다. 요청 횟수 한도에 거의 걸리지 않습니다. 연결이 안 되면 아래 방식으로 자동 전환합니다.</span></div></label>
     <label class="opt"><input type="radio" name="engine" value="gemini">
-      <div><b>☁ 제미나이 준실시간 (권장)</b>
+      <div><b>☁ 제미나이 구간 전송 (보조)</b>
       <span>녹음을 약 30초마다 제미나이로 보내 글자로 바꿉니다. iPad에서도 안정적이고 정확합니다. 말한 뒤 10~30초 후에 화면에 나타납니다.</span></div></label>
     <label class="opt"><input type="radio" name="engine" value="browser">
       <div><b>📱 기기 음성인식</b>
@@ -379,7 +382,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
     <div class="row" style="margin-top:8px"><span class="small">제미나이 전사 간격</span>
       <select id="chunkSel" style="width:auto"><option value="20">20초 (빠름)</option><option value="30">30초 (권장)</option><option value="45">45초</option><option value="60">60초 (한도 절약)</option></select></div>
 
-    <div class="row" style="margin-top:12px"><button id="txTest">🧪 전사 시험 (5초 말해 보기)</button></div>
+    <div class="row" style="margin-top:12px"><button id="liveTest" class="primary">⚡ 실시간(Live) 연결 시험</button><button id="txTest">🧪 구간 전송 시험</button></div>
     <div class="small" id="txTestOut" style="margin-top:6px;line-height:1.6"></div>
 
     <label for="modelSel">사용할 모델</label>
@@ -387,7 +390,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
     <div class="small" style="margin-top:6px">기본은 ‘Flash’ 계열(빠르고 무료 한도가 넉넉함)을 권장합니다. ‘연결 확인’을 누르면 사용 가능한 모델 목록이 갱신됩니다.</div>
     <div class="warn" style="margin-top:16px">
       🔒 <b>보안 안내</b><br>
-      · ‘제미나이 준실시간 전사’를 쓰면 <b>녹음 음성이 약 30초마다 구글 서버로 전송</b>됩니다. 민감한 간담회는 ‘기기 음성인식’ 또는 ‘전사 끄기’를 선택하세요.<br>
+      · ‘실시간(Live)’과 ‘구간 전송’ 방식은 <b>녹음 음성을 구글 서버로 전송</b>합니다(실시간은 계속, 구간 전송은 약 30초마다). 민감한 간담회는 ‘기기 음성인식’ 또는 ‘전사 끄기’를 선택하세요.<br>
       · API 키는 <b>이 기기의 브라우저에만</b> 저장되며 다른 곳으로 전송되지 않습니다(구글 호출 시에만 사용).<br>
       · <b>무료 등급</b>으로 보낸 내용은 구글의 서비스 개선에 활용될 수 있습니다. 개인정보·민감 사안이 포함된 간담회는 ‘빠른 정리’(텍스트만 전송) 또는 AI 정리를 생략하세요.
     </div>
@@ -523,14 +526,16 @@ async function startRecording(){
   rec.start(5000);           // 5초마다 조각 저장
   startMeter(stream);
   mode = 'recording'; runStart = performance.now(); lastResultAt = performance.now(); warnedNoText = false;
-  resetStats(); pcmReset(); if(activeEngine === 'gemini') watchPCM(); renderTxStat();
+  resetStats(); pcmReset(); if(activeEngine === 'gemini') watchPCM();
+  if(activeEngine === 'live'){ liveReset(); watchPCM(); liveStart(); }
+  renderTxStat();
   try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
   if(activeEngine === 'browser') startRecog();
   keepAwake(true);
   save(); updateUI();
 }
 function pauseRecording(){
-  flushPCM(true); endRecSource();
+  flushPCM(true); endRecSource(); liveStop();
   S.elapsed = now(); mode = 'paused';
   try{ recorder.pause(); } catch {}
   stopRecog(); save(); updateUI();
@@ -539,12 +544,13 @@ function resumeRecording(){
   try{ recorder.resume(); } catch {}
   mode = 'recording'; runStart = performance.now();
   activeEngine = chooseEngine(); prepAudioCtx(); pcmReset(); if(activeEngine === 'gemini'){ watchPCM(); if(txSource === 'rec') startRecSource(); }
+  if(activeEngine === 'live'){ liveReset(); watchPCM(); liveStart(); }
   if(activeEngine === 'browser') startRecog();
   renderTxStat(); updateUI();
 }
 function stopRecording(){
   if(mode === 'idle') return;
-  flushPCM(true); endRecSource();
+  flushPCM(true); endRecSource(); liveStop();
   S.elapsed = now(); mode = 'idle';
   stopRecog(); commitInterim();
   try{ recorder.stop(); } catch {}
@@ -572,7 +578,7 @@ document.addEventListener('visibilitychange', () => {
   const track = stream && stream.getAudioTracks()[0];
   const dead = !recorder || recorder.state === 'inactive' || !track || track.readyState === 'ended';
   if(dead){
-    flushPCM(true); endRecSource(); S.elapsed = now(); mode = 'idle'; stopRecog(); commitInterim(); stopMeter(); keepAwake(false);
+    flushPCM(true); endRecSource(); liveStop(); S.elapsed = now(); mode = 'idle'; stopRecog(); commitInterim(); stopMeter(); keepAwake(false);
     try{ recorder && recorder.state !== 'inactive' && recorder.stop(); } catch {}
     save(); updateUI();
     showBanner('⚠ 화면을 벗어난 동안 녹음이 멈췄습니다. 그 전까지의 녹음은 안전하게 저장되었습니다. ‘● 이어서 녹음’을 눌러 계속하세요.', true);
@@ -693,11 +699,11 @@ function liveModel(){
 }
 const stats = { chunks: 0, silent: 0, sent: 0, lines: 0, empty: 0, emptyRun: 0, decodeFail: 0 };
 function resetStats(){ Object.keys(stats).forEach(k => stats[k] = 0); txSource = 'pcm'; silentRun = 0; lvl = 0; }
-function getEngine(){ const e = localStorage.getItem('meetnote.engine'); return ['gemini', 'browser', 'off'].includes(e) ? e : (getKey() ? 'gemini' : 'browser'); }
+function getEngine(){ const e = localStorage.getItem('meetnote.engine'); return ['live', 'gemini', 'browser', 'off'].includes(e) ? e : (getKey() ? 'live' : 'browser'); }
 function getChunkSec(){ return Math.min(60, Math.max(5, +(localStorage.getItem('meetnote.chunk') || 30))); }
 function chooseEngine(){
   let e = getEngine();
-  if(e === 'gemini' && !getKey()){ e = SR ? 'browser' : 'off'; showBanner('⚠ 제미나이 API 키가 없어 기기 음성인식으로 시작합니다. (⚙ 설정에서 키를 등록하면 더 정확한 전사를 쓸 수 있어요)', true); }
+  if((e === 'gemini' || e === 'live') && !getKey()){ e = SR ? 'browser' : 'off'; showBanner('⚠ 제미나이 API 키가 없어 기기 음성인식으로 시작합니다. (⚙ 설정에서 키를 등록하면 더 정확한 전사를 쓸 수 있어요)', true); }
   if(e === 'browser' && !SR) e = 'off';
   return e;
 }
@@ -707,6 +713,13 @@ function pcmReset(){
 }
 function onPCM(e){
   pcm.blocks++;
+  if(mode === 'recording' && activeEngine === 'live'){
+    const x = e.inputBuffer.getChannelData(0); let bsq = 0;
+    for(let i = 0; i < x.length; i++) bsq += x[i] * x[i];
+    lvl = Math.max(Math.sqrt(bsq / x.length), lvl * 0.85);
+    liveFeed(x, e.inputBuffer.sampleRate);
+    return;
+  }
   if(mode !== 'recording' || activeEngine !== 'gemini' || !pcm.arr) return;
   const x = e.inputBuffer.getChannelData(0), ratio = e.inputBuffer.sampleRate / PCM_HZ;
   let bsq = 0;
@@ -809,7 +822,8 @@ function encodeWav(int16){
 function watchPCM(){
   const b0 = pcm.blocks;
   setTimeout(() => {
-    if(mode === 'recording' && activeEngine === 'gemini' && pcm.blocks === b0){
+    if(mode === 'recording' && (activeEngine === 'gemini' || activeEngine === 'live') && pcm.blocks === b0){
+      liveStop();
       if(SR){ activeEngine = 'browser'; startRecog(); showBanner('⚠ 제미나이 전사용 오디오를 시작하지 못해 기기 음성인식으로 전환했습니다.', true); }
       else showBanner('⚠ 실시간 전사를 시작하지 못했습니다. 녹음은 정상 저장되며, 끝난 뒤 ‘AI 회의록’으로 전사할 수 있습니다.', true);
       renderTxStat(); setStatus();
@@ -938,7 +952,8 @@ async function runTx(job){
 function renderTxStat(){
   const el = $('#txStat'); if(!el) return;
   const eng = (mode !== 'idle' && activeEngine) ? activeEngine : getEngine();
-  let t = { gemini: '☁ 제미나이 전사', browser: '📱 기기 전사', off: '⛔ 전사 꺼짐' }[eng] || '';
+  let t = { live: '⚡ 실시간 전사', gemini: '☁ 구간 전송', browser: '📱 기기 전사', off: '⛔ 전사 꺼짐' }[eng] || '';
+  if(eng === 'live' && mode !== 'idle') t += { open: ' · 🟢 연결됨', connecting: ' · 연결 중…', reconnecting: ' · 재연결 중…', closed: ' · 재연결 대기' }[live.state] || '';
   if(eng === 'gemini'){ const q = txQueue.length + txActive; if(q) t += ` · ⏳ 전사 중 ${q}`; }
   if(failedJobs.length) t += ` · ⚠ 실패 ${failedJobs.length}건 (눌러서 재시도)`;
   el.textContent = t; el.classList.toggle('warn', !!failedJobs.length);
@@ -947,6 +962,7 @@ function renderTxStat(){
 $('#txStat').onclick = () => { if(failedJobs.length) retryFailed(); else openSettings(); };
 // 다음 전사까지 남은 시간 + 입력 소리 + 진행 현황
 setInterval(() => {
+  if(activeEngine === 'live'){ liveTick(); return; }
   if(activeEngine !== 'gemini') return;
   const q = txQueue.length + txActive; let msg = '';
   let wait = 0; txInflight.forEach(j => { wait = Math.max(wait, (performance.now() - j.tStart) / 1000); });
@@ -961,6 +977,165 @@ setInterval(() => {
   else if(q) msg = `⏳ 남은 구간 전사 중 (${q})` + tail;
   if(interimEl.textContent !== msg){ interimEl.textContent = msg; if(msg && stick) linesEl.scrollTop = linesEl.scrollHeight; }
 }, 500);
+
+/* ============ 제미나이 실시간(Live) 전사 ============ */
+const LIVE_URL = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
+// 위에서부터 차례로 시도하고, 처음 연결된 조합을 기억해 다음부터 먼저 씀
+const LIVE_TRIES = [
+  { model: 'gemini-3.5-transcribe-live', mod: 'TEXT', tx: true },
+  { model: 'gemini-3.5-transcribe-live', mod: 'AUDIO', tx: true },
+  { model: 'gemini-3.8-live', mod: 'AUDIO' },
+  { model: 'gemini-3.1-flash-live-preview', mod: 'AUDIO' },
+  { model: 'gemini-2.5-flash-native-audio-preview-12-2025', mod: 'AUDIO' },
+  { model: 'gemini-live-2.5-flash-preview', mod: 'TEXT' }
+];
+const live = { ws: null, state: 'off', cfg: null, handle: null, partial: '', partT: null, lastFrag: 0, q: [], ds: { pos: 0, acc: 0, cnt: 0 }, buf: new Int16Array(16000), n: 0, wantOpen: false, retry: 0, everOpen: false, reconnecting: false, lastErr: '' };
+const sameCfg = (a, b) => a && b && a.model === b.model && a.mod === b.mod;
+function liveOrder(){
+  let saved = null; try{ saved = JSON.parse(localStorage.getItem('meetnote.livecfg') || 'null'); } catch {}
+  const base = LIVE_TRIES.slice();
+  if(saved && saved.model) return [saved, ...base.filter(c => !sameCfg(c, saved))];
+  return base;
+}
+function i16ToB64(i16){
+  const u8 = new Uint8Array(i16.buffer, i16.byteOffset, i16.byteLength); let bin = '';
+  for(let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function liveSetupMsg(cfg, handle){
+  const setup = { model: 'models/' + cfg.model, generationConfig: { responseModalities: [cfg.mod] }, inputAudioTranscription: {}, contextWindowCompression: { slidingWindow: {} }, sessionResumption: handle ? { handle } : {} };
+  if(!cfg.tx) setup.systemInstruction = { parts: [{ text: '당신은 회의를 기록하는 녹음 장치입니다. 들리는 말에 대답하거나 말하지 마세요. 어떤 응답도 하지 마세요.' }] };
+  return { setup };
+}
+// 연결 + 초기 설정. 서버가 setupComplete를 보내면 성공, 그 전에 닫히면 실패(다음 후보로)
+function openLive(cfg, handle, { onMsg, onClose }){
+  return new Promise((resolve, reject) => {
+    let ws; try{ ws = new WebSocket(LIVE_URL + '?key=' + encodeURIComponent(getKey())); } catch(e){ reject(e); return; }
+    let done = false, chain = Promise.resolve();
+    const to = setTimeout(() => { if(!done){ done = true; try{ ws.close(); } catch {} reject(new Error(cfg.model + ' 연결 시간 초과')); } }, 10000);
+    ws.onopen = () => { try{ ws.send(JSON.stringify(liveSetupMsg(cfg, handle))); } catch {} };
+    ws.onmessage = ev => {
+      chain = chain.then(async () => {
+        const txt = typeof ev.data === 'string' ? ev.data : await ev.data.text();
+        let m; try{ m = JSON.parse(txt); } catch { return; }
+        if(m.setupComplete){ if(!done){ done = true; clearTimeout(to); resolve(ws); } return; }
+        if(done) onMsg(m, ws);
+      }).catch(() => {});
+    };
+    ws.onclose = ev => {
+      if(!done){ done = true; clearTimeout(to); reject(new Error(`${cfg.model} 연결 거부 (${ev.code}${ev.reason ? ': ' + ev.reason.slice(0, 80) : ''})`)); }
+      else onClose(ws, ev);
+    };
+    ws.onerror = () => {};
+  });
+}
+function liveReset(){ Object.assign(live, { partial: '', partT: null, q: [], n: 0, ds: { pos: 0, acc: 0, cnt: 0 }, retry: 0, everOpen: false, handle: null, lastErr: '', reconnecting: false }); }
+function liveStart(){ live.wantOpen = true; live.retry = 0; liveConnect(); }
+async function liveConnect(){
+  if(!live.wantOpen) return;
+  live.state = live.everOpen ? 'reconnecting' : 'connecting'; renderTxStat();
+  const order = live.cfg ? [live.cfg, ...liveOrder().filter(c => !sameCfg(c, live.cfg))] : liveOrder();
+  let lastErr = null;
+  for(const cfg of order){
+    for(const h of (live.handle && sameCfg(cfg, live.cfg) ? [live.handle, null] : [null])){
+      try{
+        const ws = await openLive(cfg, h, { onMsg: liveOnMsg, onClose: liveOnClose });
+        if(!live.wantOpen){ try{ ws.close(); } catch {} return; }
+        Object.assign(live, { ws, cfg, state: 'open', retry: 0, everOpen: true, lastErr: '' });
+        if(!h) live.handle = null;
+        try{ localStorage.setItem('meetnote.livecfg', JSON.stringify(cfg)); } catch {}
+        liveFlushQueue(); renderTxStat(); setStatus(); stats.model = cfg.model;
+        return;
+      } catch(e){ lastErr = e; if(!live.wantOpen) return; }
+    }
+  }
+  live.lastErr = lastErr ? String(lastErr.message || lastErr) : '연결 실패';
+  if(live.everOpen && live.retry < 6){ live.state = 'closed'; liveReconnectSoon(); return; }
+  liveGiveUp();
+}
+function liveOnMsg(m){
+  if(m.sessionResumptionUpdate && m.sessionResumptionUpdate.newHandle) live.handle = m.sessionResumptionUpdate.newHandle;
+  if(m.goAway){ liveReconnectSoon(); return; }          // 서버가 곧 끊는다고 알리면 미리 이어 붙임
+  const sc = m.serverContent; if(!sc) return;
+  if(sc.inputTranscription && sc.inputTranscription.text) liveText(sc.inputTranscription.text, !!sc.inputTranscription.finished);
+  if(live.cfg && live.cfg.tx && sc.modelTurn && sc.modelTurn.parts) sc.modelTurn.parts.forEach(pt => { if(pt.text && !pt.thought) liveText(pt.text, false); });
+}
+function liveOnClose(ws, ev){
+  if(ws !== live.ws) return;
+  live.ws = null; live.lastErr = ev.reason ? ev.reason.slice(0, 80) : '연결 종료 (' + ev.code + ')';
+  if(live.wantOpen && mode === 'recording') liveReconnectSoon(); else { live.state = 'off'; renderTxStat(); }
+}
+function liveReconnectSoon(){
+  if(live.reconnecting || !live.wantOpen) return;
+  live.reconnecting = true; liveFinalize();
+  const old = live.ws; live.ws = null; live.state = 'reconnecting'; renderTxStat();
+  try{ old && old.close(); } catch {}
+  const delay = live.retry ? Math.min(8000, 1000 * live.retry) : 200;
+  live.retry++;
+  setTimeout(() => { live.reconnecting = false; if(live.wantOpen && mode === 'recording') liveConnect(); }, delay);
+}
+function liveGiveUp(){
+  live.wantOpen = false; live.state = 'off'; live.q = [];
+  if(mode === 'recording' && activeEngine === 'live'){
+    activeEngine = getKey() ? 'gemini' : (SR ? 'browser' : 'off');
+    if(activeEngine === 'gemini') pcmReset(); else if(activeEngine === 'browser') startRecog();
+    showBanner('⚠ 실시간(Live) 연결에 실패해 ' + (activeEngine === 'gemini' ? '구간 전송 방식' : '기기 음성인식') + '으로 전환했습니다. 사유: ' + live.lastErr + ' · ⚙ 설정의 ‘실시간 연결 시험’으로 확인해 보세요.', true);
+  }
+  renderTxStat(); setStatus();
+}
+function liveStop(){
+  if(!live.wantOpen && !live.ws) return;
+  live.wantOpen = false;
+  if(live.n) liveSendBuf();
+  const ws = live.ws;
+  if(ws && ws.readyState === 1){
+    try{ ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } })); } catch {}
+    setTimeout(() => { liveFinalize(); try{ ws.close(); } catch {} if(live.ws === ws){ live.ws = null; live.state = 'off'; renderTxStat(); } }, 2500);
+  } else { liveFinalize(); live.ws = null; live.state = 'off'; }
+  live.q = []; live.handle = null;
+}
+// 마이크 소리 → 16kHz → 0.25초마다 전송 (연결이 끊긴 동안은 최대 30초 보관)
+function liveFeed(x, sr){
+  const ratio = sr / PCM_HZ, d = live.ds;
+  for(let i = 0; i < x.length; i++){
+    d.acc += x[i]; d.cnt++; d.pos += 1;
+    if(d.pos >= ratio){
+      d.pos -= ratio; const y = d.acc / d.cnt; d.acc = 0; d.cnt = 0;
+      live.buf[live.n++] = Math.max(-1, Math.min(1, y)) * 32767;
+      if(live.n >= 4000) liveSendBuf();
+    }
+  }
+}
+function liveSendBuf(){
+  const chunk = live.buf.slice(0, live.n); live.n = 0;
+  if(live.state === 'open' && live.ws && live.ws.readyState === 1){ try{ liveSend(live.ws, chunk); } catch {} }
+  else if(live.wantOpen){ live.q.push(chunk); if(live.q.length > 120) live.q.shift(); }
+}
+function liveSend(ws, i16){ ws.send(JSON.stringify({ realtimeInput: { audio: { data: i16ToB64(i16), mimeType: 'audio/pcm;rate=16000' } } })); }
+function liveFlushQueue(){ while(live.q.length && live.ws && live.ws.readyState === 1) liveSend(live.ws, live.q.shift()); }
+// 조각 글자를 모아 한 줄로: 1.6초 조용하거나, 문장이 충분히 길면 확정
+function liveText(t, fin){
+  if(!live.partial) live.partT = Math.max(0, now() - 1.5);
+  live.partial += t; live.lastFrag = performance.now();
+  if(fin || (live.partial.length > 140 && /[.?!。…]\s*$/.test(live.partial)) || live.partial.length > 260) liveFinalize();
+  else { interimEl.textContent = live.partial.trim() + ' …'; if(stick) linesEl.scrollTop = linesEl.scrollHeight; }
+}
+function liveFinalize(){
+  const t = live.partial.replace(/\s+/g, ' ').trim();
+  if(t){ addLine(live.partT ?? now(), t); stats.lines++; }
+  live.partial = ''; live.partT = null;
+}
+function liveTick(){
+  if(live.partial && performance.now() - live.lastFrag > 1600) liveFinalize();
+  let msg = '';
+  if(live.partial) msg = live.partial.trim() + ' …';
+  else if(mode === 'recording'){
+    const L = Math.min(8, Math.round(Math.sqrt(lvl) * 20)), bar = '▮'.repeat(L) + '▯'.repeat(8 - L);
+    const st = { connecting: '실시간 서버에 연결 중…', reconnecting: '재연결 중… (그동안의 소리는 보관 중)', open: '듣는 중', closed: '재연결 대기' }[live.state] || '연결 안 됨';
+    msg = `⚡ ${st} · 입력 ${bar} · 글자 ${stats.lines}줄` + (live.cfg && live.state === 'open' ? ` · ${live.cfg.model}` : '') + (live.lastErr && live.state !== 'open' ? ` · ⚠ ${live.lastErr}` : '');
+  }
+  if(interimEl.textContent !== msg){ interimEl.textContent = msg; if(msg && stick) linesEl.scrollTop = linesEl.scrollHeight; }
+}
 
 /* ============ 전사 창 ============ */
 const linesEl = $('#lines'), interimEl = $('#interim');
@@ -1165,7 +1340,7 @@ async function seekTo(t){
 function setStatus(msg){
   const st = $('#status');
   st.className = mode === 'recording' ? 'on' : mode === 'paused' ? 'pause' : '';
-  $('#statusTx').textContent = msg || (mode === 'recording' ? (activeEngine === 'gemini' ? '녹음·제미나이 전사 중' : activeEngine === 'browser' ? (recogWanted ? '녹음·전사 중' : '녹음 중(전사 꺼짐)') : '녹음 중(전사 꺼짐)') : mode === 'paused' ? '일시정지' : (S.segments.length ? '녹음 종료됨' : '대기 중'));
+  $('#statusTx').textContent = msg || (mode === 'recording' ? (activeEngine === 'live' ? '녹음·실시간 전사 중' : activeEngine === 'gemini' ? '녹음·제미나이 전사 중' : activeEngine === 'browser' ? (recogWanted ? '녹음·전사 중' : '녹음 중(전사 꺼짐)') : '녹음 중(전사 꺼짐)') : mode === 'paused' ? '일시정지' : (S.segments.length ? '녹음 종료됨' : '대기 중'));
 }
 function updateUI(){
   const b = $('#btnRec');
@@ -1596,6 +1771,44 @@ function openSettings(){
   openModal('#mSettings');
 }
 $$('input[name=engine]').forEach(r => r.addEventListener('change', e => { localStorage.setItem('meetnote.engine', e.target.value); renderTxStat(); if(mode !== 'idle') toast('전사 방식은 다음 ‘계속 녹음’부터 적용됩니다.'); }));
+$('#liveTest').onclick = async () => {
+  const out = $('#txTestOut');
+  if(mode !== 'idle'){ out.textContent = '녹음 중에는 시험할 수 없습니다. 종료 후 다시 눌러 주세요.'; return; }
+  if(!getKey()){ out.textContent = '먼저 위에서 API 키를 등록하고 ‘연결 확인’을 눌러 주세요.'; return; }
+  let st; try{ st = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch(e){ out.textContent = '마이크를 사용할 수 없습니다: ' + (e.name || e); return; }
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+  const rec = new MediaRecorder(st, mime ? { mimeType: mime } : {}), parts = [];
+  rec.ondataavailable = e => { if(e.data && e.data.size) parts.push(e.data); };
+  const stopped = new Promise(r => { rec.onstop = r; });
+  out.textContent = '🎤 지금 5초 동안 아무 말이나 또렷하게 말씀해 보세요…';
+  rec.start(); await sleep(5000); rec.stop(); await stopped; st.getTracks().forEach(t => t.stop());
+  let i16;
+  try{ i16 = await decodeTo16k(new Blob(parts, { type: rec.mimeType || 'audio/mp4' })); } catch(e){ out.textContent = '❌ 녹음을 해독하지 못했습니다: ' + (e.message || e); return; }
+  let sq = 0; for(let i = 0; i < i16.length; i++) sq += i16[i] * i16[i];
+  const rms = Math.sqrt(sq / Math.max(1, i16.length)) / 32768;
+  if(rms < 0.0003){ out.textContent = '❌ 마이크에서 소리가 거의 들어오지 않았습니다. 사파리의 마이크 권한과 기기 음량을 확인해 주세요.'; return; }
+  const log = [];
+  for(const cfg of liveOrder()){
+    out.textContent = `⚡ ${cfg.model} 에 연결하는 중… (${log.length + 1}/${liveOrder().length})`;
+    const t0 = performance.now(); let got = '';
+    try{
+      const ws = await openLive(cfg, null, { onMsg: m => { const sc = m.serverContent; if(!sc) return; if(sc.inputTranscription && sc.inputTranscription.text) got += sc.inputTranscription.text; if(cfg.tx && sc.modelTurn && sc.modelTurn.parts) sc.modelTurn.parts.forEach(pt => { if(pt.text && !pt.thought) got += pt.text; }); }, onClose: () => {} });
+      const setupSec = ((performance.now() - t0) / 1000).toFixed(1);
+      out.textContent = `⚡ ${cfg.model} 연결됨 · 음성을 보내는 중…`;
+      for(let i = 0; i < i16.length; i += 4000){ liveSend(ws, i16.subarray(i, i + 4000)); await sleep(120); }
+      try{ ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } })); } catch {}
+      for(let k = 0; k < 40 && !got.trim(); k++) await sleep(250);
+      await sleep(1200); try{ ws.close(); } catch {}
+      if(got.trim()){
+        try{ localStorage.setItem('meetnote.livecfg', JSON.stringify(cfg)); } catch {}
+        out.textContent = `✅ 실시간 연결 성공 · 모델 ${cfg.model} · 연결 ${setupSec}초 · 입력 소리 ${(rms * 100).toFixed(1)}% → “${got.replace(/\s+/g, ' ').trim().slice(0, 120)}”`;
+        return;
+      }
+      log.push(`${cfg.model}: 연결됐지만 글자 없음`);
+    } catch(e){ log.push(String(e.message || e)); }
+  }
+  out.textContent = '❌ 실시간 연결 실패 · ' + log.join(' / ') + ' → 이 문구를 그대로 알려 주세요. 녹음 중에는 구간 전송 방식으로 자동 전환됩니다.';
+};
 $('#txTest').onclick = async () => {
   const out = $('#txTestOut');
   if(mode !== 'idle'){ out.textContent = '녹음 중에는 시험할 수 없습니다. 종료 후 다시 눌러 주세요.'; return; }
@@ -1664,6 +1877,7 @@ $('#btnStop').onclick = stopRecording;
 
 /* ============ 시작 ============ */
 (async function init(){
+  try{ if(!localStorage.getItem('meetnote.mig.live')){ if(localStorage.getItem('meetnote.engine') === 'gemini') localStorage.setItem('meetnote.engine', 'live'); localStorage.setItem('meetnote.mig.live', '1'); } } catch {}
   const fs = localStorage.getItem('meetnote.fs'); if(fs) setFs(+fs);
   const lw = localStorage.getItem('meetnote.left'); if(lw) document.documentElement.style.setProperty('--left', lw);
   if(!S.meta.date) S.meta.date = todayStr();
