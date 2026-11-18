@@ -71,7 +71,7 @@ main{flex:1;display:grid;grid-template-columns:var(--left) 8px 1fr;min-height:0;
 
 /* 전사 창 */
 #lines{flex:1;overflow-y:auto;padding:10px 6px 10px 14px;font-size:var(--fs);line-height:1.65;position:relative}
-.line{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:5px 6px;border-radius:8px;align-items:start}
+.line{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;padding:5px 6px;border-radius:8px;align-items:start}
 .line:hover{background:#f6f8fc}
 .line.star{background:var(--star-weak)}
 .line .ts{font-size:12px;padding:2px 7px;margin-top:4px;color:var(--accent);background:var(--accent-weak);border:none;font-variant-numeric:tabular-nums;border-radius:6px}
@@ -80,6 +80,21 @@ main{flex:1;display:grid;grid-template-columns:var(--left) 8px 1fr;min-height:0;
 .line .la{display:flex;gap:4px;opacity:0;transition:opacity .1s}
 .line:hover .la,.line:focus-within .la{opacity:1}
 .line .la button{font-size:12px;padding:3px 7px}
+/* 발언자 */
+#spkBar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);max-height:132px;overflow-y:auto;align-items:center;background:#fafbfd;-webkit-overflow-scrolling:touch;flex-shrink:0}
+#spkBar .lab{font-size:12px;color:var(--muted);white-space:nowrap;margin-right:2px}
+.chip{border-radius:999px;padding:6px 13px;font-size:14px;min-height:38px;border:1.5px solid var(--c,#c9cfdb);background:#fff;color:var(--text)}
+.chip small{font-size:10px;opacity:.6;margin-right:2px}
+.chip.on{background:var(--c);border-color:var(--c);color:#fff;font-weight:700}
+.chip.on small{opacity:.85}
+.chip.none{--c:#8a91a3}
+.chip.add{border-style:dashed;color:var(--muted)}
+#spkBar.editing .chip[data-sp]:not(.none){border-style:dashed;outline:2px solid #ffd76a}
+.line .sp{font-size:12.5px;font-weight:700;padding:2px 8px;margin-top:4px;border-radius:6px;border:none;background:var(--w,#eef0f4);color:var(--c,#687087);max-width:9em;overflow:hidden;text-overflow:ellipsis}
+.line .sp.unset{color:#a3a9b7;background:#f3f4f7;font-weight:500}
+.line.newspk{margin-top:8px;border-top:1px dashed #e3e7ee;padding-top:9px}
+#spkMenu{position:fixed;min-width:200px;max-height:60vh;overflow:auto}
+#spkMenu .opt2{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--muted);padding:8px 10px;border-top:1px solid var(--line);margin-top:4px}
 #interim{color:#8a91a3;font-style:italic;padding:5px 6px 5px 70px;min-height:1.6em}
 .empty{color:var(--muted);font-size:15px;line-height:1.8;padding:24px 10px}
 .empty b{color:var(--text)}
@@ -215,12 +230,14 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
       <span style="flex:1"></span>
       <span class="small" id="editHint">글자를 클릭하면 바로 고칠 수 있어요</span>
     </div>
+    <div id="spkBar" aria-label="현재 발언자 선택"></div>
     <div id="lines">
       <div class="empty" id="empty">
         <b>시작하는 방법</b>
         <ol>
           <li>위의 <b>‘● 녹음 시작’</b>을 누르고, 마이크 사용을 <b>허용</b>하세요.</li>
           <li>말하는 내용이 이 창에 자동으로 적힙니다.</li>
+          <li><b>발언자가 바뀌면 위의 이름 버튼</b>을 눌러 주세요. 이후 발언에 이름이 붙습니다. (회의 정보에 참석자를 적어 두면 ‘📋 참석자 명단 불러오기’로 버튼이 한 번에 만들어집니다)</li>
           <li>오른쪽 메모장에 자유롭게 메모하세요. <b>🕐 시각</b> 버튼은 현재 시각을, <b>⭐ 방금 발언</b> 버튼은 방금 나온 말을 메모로 가져옵니다.</li>
           <li>휴식 시간에는 <b>일시정지</b>, 간담회가 끝나면 <b>‘■ 종료’</b>를 누르세요.</li>
           <li>오른쪽 <b>‘✨ AI 회의록’</b> 탭에서 화자 구분 전사와 결과보고 초안을 만들 수 있습니다.</li>
@@ -259,7 +276,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
         <button data-tag="[질문]">질문</button>
       </div>
       <textarea id="memo" placeholder="여기에 자유롭게 메모하세요.&#10;&#10;· [건의], [조치필요] 같은 태그를 붙여 두면 AI가 결과보고에 우선 반영합니다.&#10;· 메모는 자동 저장됩니다."></textarea>
-      <div class="hint" id="memoHint">외장 키보드 단축키: <kbd>Ctrl</kbd>+<kbd>1</kbd> 시각 · <kbd>Ctrl</kbd>+<kbd>2</kbd> 방금 발언 · <kbd>Ctrl</kbd>+<kbd>3</kbd> 녹음 시작/일시정지 (PC는 <kbd>F2</kbd> <kbd>F4</kbd> <kbd>F9</kbd>도 가능)</div>
+      <div class="hint" id="memoHint">외장 키보드 단축키: <kbd>Ctrl</kbd>+<kbd>1</kbd> 시각 · <kbd>Ctrl</kbd>+<kbd>2</kbd> 방금 발언 · <kbd>Ctrl</kbd>+<kbd>3</kbd> 녹음 · <kbd>Alt</kbd>(⌥)+<kbd>1~9</kbd> 발언자 선택, <kbd>Alt</kbd>+<kbd>0</kbd> 미지정 (PC는 <kbd>F2</kbd> <kbd>F4</kbd> <kbd>F9</kbd>도 가능)</div>
     </div>
 
     <div class="view" id="aiView" hidden>
@@ -370,6 +387,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
         <li>상단에 <b>제목</b>과 <b>📋 회의 정보</b>(일시·장소·참석자)를 입력합니다.</li>
         <li><b>● 녹음 시작</b> → 마이크 허용. 왼쪽에 발언이 실시간으로 적힙니다.</li>
         <li>오른쪽 메모장에 메모합니다. <b>🕐 시각</b>은 시각 찍기, <b>⭐ 방금 발언</b>은 방금 나온 말을 메모로 가져오기.</li>
+        <li><b>발언자</b>: 전사 창 위의 이름 버튼을 누르면 그 뒤 발언에 이름이 붙습니다. 잘못 붙은 이름은 발언 앞 <b>이름표를 눌러</b> 고칩니다(이어지는 같은 발언자 발언도 함께 변경).</li>
         <li>휴식 땐 <b>일시정지</b>, 끝나면 <b>■ 종료</b>. 종료 후에도 <b>이어서 녹음</b>할 수 있습니다.</li>
       </ol>
       <b>간담회 후</b>
@@ -410,6 +428,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
   </div>
 </div>
 
+<div class="dd-menu" id="spkMenu" hidden></div>
 <div id="toast"></div>
 
 <script>
@@ -446,7 +465,7 @@ const IDB = {
 
 /* ============ 상태 (localStorage 자동 저장) ============ */
 const KEY = 'meetnote.session.v1';
-function fresh(){ return { sid: 's' + Date.now(), meta: { title: '', date: todayStr(), place: '', attendees: '' }, lines: [], memo: '', elapsed: 0, segments: [], result: null, savedAt: 0 }; }
+function fresh(){ return { sid: 's' + Date.now(), meta: { title: '', date: todayStr(), place: '', attendees: '' }, lines: [], memo: '', speakers: [], curSpk: null, elapsed: 0, segments: [], result: null, savedAt: 0 }; }
 function loadState(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && s.sid) return s; } catch {} return null; }
 let S = loadState() || fresh();
 let saveTimer;
@@ -617,17 +636,18 @@ const linesEl = $('#lines'), interimEl = $('#interim');
 const isTouch = matchMedia('(hover: none)').matches;
 let stick = true;
 function addLine(t, text){
-  const l = { id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t, text };
+  const l = { id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t, text, sp: S.curSpk };
   S.lines.push(l); renderLine(l); save(); autoScroll(); updateCount();
 }
 function renderLine(l){
   $('#empty').hidden = true;
   const d = document.createElement('div');
   d.className = 'line' + (l.star ? ' star' : ''); d.dataset.id = l.id;
-  d.innerHTML = `<button class="ts" title="이 시점부터 다시 듣기">${fmt(l.t)}</button><div class="tx" contenteditable="${isTouch ? 'false' : 'true'}" spellcheck="false"></div>` +
+  d.innerHTML = `<button class="ts" title="이 시점부터 다시 듣기">${fmt(l.t)}</button><button class="sp" title="발언자 바꾸기"></button><div class="tx" contenteditable="${isTouch ? 'false' : 'true'}" spellcheck="false"></div>` +
     `<div class="la"><button data-act="star" title="중요 표시">⭐</button>${isTouch ? '<button data-act="edit" title="이 발언 고치기">✏</button>' : ''}<button data-act="memo" title="이 발언을 메모장으로 보내기">➜ 메모</button></div>`;
   d.querySelector('.tx').textContent = l.text;
   linesEl.insertBefore(d, interimEl);
+  paintSp(d, l);
 }
 function renderAllLines(){ $$('#lines .line').forEach(x => x.remove()); S.lines.forEach(renderLine); $('#empty').hidden = S.lines.length > 0; updateCount(); }
 function updateCount(){ $('#lineCount').textContent = S.lines.length ? `발언 ${S.lines.length}개` : ''; }
@@ -639,9 +659,10 @@ const findLine = el => S.lines.find(x => x.id === el.closest('.line')?.dataset.i
 linesEl.addEventListener('click', e => {
   const l = findLine(e.target); if(!l) return;
   if(e.target.classList.contains('ts')) return seekTo(l.t);
+  if(e.target.classList.contains('sp')){ e.stopPropagation(); return openSpkMenu(e.target, l); }
   const act = e.target.dataset.act;
   if(act === 'star'){ l.star = !l.star; e.target.closest('.line').classList.toggle('star', !!l.star); save(); }
-  if(act === 'memo'){ insertMemo(`"${l.text}" (${fmt(l.t)})`, true); toast('➜ 메모장에 넣었습니다.'); }
+  if(act === 'memo'){ insertMemo(`${spkName(l.sp) ? spkName(l.sp) + ': ' : ''}"${l.text}" (${fmt(l.t)})`, true); toast('➜ 메모장에 넣었습니다.'); }
   if(act === 'edit'){ const tx = e.target.closest('.line').querySelector('.tx'); tx.contentEditable = 'true'; tx.focus();
     const rg = document.createRange(); rg.selectNodeContents(tx); rg.collapse(false); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(rg); }
 });
@@ -653,6 +674,87 @@ linesEl.addEventListener('focusout', e => {
   if(v !== l.text){ l.text = v; save(); }
 });
 linesEl.addEventListener('keydown', e => { if(e.target.classList.contains('tx') && e.key === 'Enter'){ e.preventDefault(); e.target.blur(); } });
+
+/* ============ 발언자 ============ */
+const PAL = [['#1f62d6','#e9f0fd'],['#c2410c','#fdeee6'],['#15803d','#e6f4ea'],['#7c3aed','#f1eafe'],['#be185d','#fce7f1'],['#0e7490','#e0f4f8'],['#a16207','#fdf4dc'],['#4b5563','#eceef1']];
+let spkEdit = false;
+const spk = id => (S.speakers || []).find(x => x.id === id);
+const spkName = id => (id && spk(id)?.name) || '';
+function spkPal(id){ const i = S.speakers.findIndex(x => x.id === id); return PAL[(i < 0 ? 7 : i) % PAL.length]; }
+function paintSp(d, l){
+  const b = d.querySelector('.sp'); const n = spkName(l.sp);
+  b.textContent = n || '발언자?'; b.classList.toggle('unset', !n);
+  if(n){ const [c, w] = spkPal(l.sp); b.style.setProperty('--c', c); b.style.setProperty('--w', w); }
+  // 발언자가 바뀌는 지점에 구분선
+  const i = S.lines.indexOf(l); d.classList.toggle('newspk', i > 0 && S.lines[i - 1].sp !== l.sp);
+}
+function repaintAllSp(){ $$('#lines .line').forEach(d => { const l = S.lines.find(x => x.id === d.dataset.id); if(l) paintSp(d, l); }); }
+function parseAttendees(t){
+  const seen = new Set();
+  return String(t || '').split(/[,，\n;·]+/).map(x => x.replace(/\s*(등|외)?\s*\d+\s*(여)?\s*(명|인).*$/, '').trim()).filter(x => x && !seen.has(x) && seen.add(x)).slice(0, 12);
+}
+function addSpeaker(name){
+  name = String(name || '').trim(); if(!name) return null;
+  const ex = S.speakers.find(x => x.name === name); if(ex) return ex.id;
+  const id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  S.speakers.push({ id, name }); return id;
+}
+function setCur(id, quiet){
+  S.curSpk = id || null; save(); renderSpkBar();
+  if(!quiet) toast(id ? `🎤 지금 발언: ${spkName(id)}` : '🎤 발언자 미지정', 1200);
+}
+function renderSpkBar(){
+  const bar = $('#spkBar'); bar.classList.toggle('editing', spkEdit);
+  let h = `<span class="lab">${spkEdit ? '이름 눌러 수정·삭제 →' : '지금 발언자'}</span>`;
+  h += `<button class="chip none ${!S.curSpk ? 'on' : ''}" data-sp="">미지정</button>`;
+  h += S.speakers.map((p, i) => `<button class="chip ${S.curSpk === p.id ? 'on' : ''}" style="--c:${PAL[i % PAL.length][0]}" data-sp="${p.id}">${i < 9 ? `<small>${i + 1}</small>` : ''}${esc(p.name)}</button>`).join('');
+  h += `<button class="chip add" data-spadd>＋ 추가</button>`;
+  if(!S.speakers.length && parseAttendees(S.meta.attendees).length) h += `<button class="chip add" data-spimport>📋 참석자 명단 불러오기</button>`;
+  if(S.speakers.length) h += `<button class="chip add" data-spedit>${spkEdit ? '✔ 완료' : '✎ 편집'}</button>`;
+  bar.innerHTML = h;
+}
+$('#spkBar').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.hasAttribute('data-spadd')){ const n = prompt('발언자 이름을 입력하세요\n(예: 김○○ 이장, 주민A, ○○과장)'); const id = addSpeaker(n); if(id){ setCur(id); } return; }
+  if(b.hasAttribute('data-spimport')){ parseAttendees(S.meta.attendees).forEach(addSpeaker); save(); renderSpkBar(); repaintAllSp(); toast(`📋 발언자 ${S.speakers.length}명을 불러왔습니다. 발언자가 바뀔 때 이름을 눌러 주세요.`, 3500); return; }
+  if(b.hasAttribute('data-spedit')){ spkEdit = !spkEdit; renderSpkBar(); return; }
+  if(!b.hasAttribute('data-sp')) return;
+  const id = b.dataset.sp;
+  if(spkEdit && id){
+    const p = spk(id); const n = prompt(`‘${p.name}’의 새 이름을 입력하세요.\n(칸을 비우고 확인하면 이 발언자를 삭제합니다)`, p.name);
+    if(n === null) return;
+    if(n.trim()){ p.name = n.trim(); }
+    else if(confirm(`‘${p.name}’을(를) 삭제할까요? 이 발언자로 표시된 발언은 ‘발언자?’로 바뀝니다.`)){
+      S.speakers = S.speakers.filter(x => x.id !== id); S.lines.forEach(l => { if(l.sp === id) l.sp = null; }); if(S.curSpk === id) S.curSpk = null;
+    }
+    save(); renderSpkBar(); repaintAllSp(); return;
+  }
+  setCur(id);
+});
+let menuLine = null;
+function openSpkMenu(el, l){
+  menuLine = l;
+  const m = $('#spkMenu');
+  m.innerHTML = S.speakers.map((p, i) => `<button data-pick="${p.id}"><span style="color:${PAL[i % PAL.length][0]}">●</span> ${esc(p.name)}${l.sp === p.id ? ' ✓' : ''}</button>`).join('') +
+    `<button data-pick="">○ 미지정</button><button data-pick="__new">＋ 새 발언자 추가</button>` +
+    `<label class="opt2"><input type="checkbox" id="spCascade" checked> 바로 이어지는 같은 발언자 발언도 함께 변경</label>`;
+  $$('.dd-menu').forEach(x => x.hidden = true);
+  m.hidden = false;
+  const r = el.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(r.left, innerWidth - mw - 8)) + 'px';
+  m.style.top = (r.bottom + mh + 8 < innerHeight ? r.bottom + 4 : Math.max(8, r.top - mh - 4)) + 'px';
+}
+$('#spkMenu').addEventListener('click', e => {
+  e.stopPropagation();
+  const b = e.target.closest('button[data-pick]'); if(!b || !menuLine) return;
+  let id = b.dataset.pick || null;
+  if(id === '__new'){ id = addSpeaker(prompt('발언자 이름을 입력하세요')); if(!id) return; renderSpkBar(); }
+  const old = menuLine.sp ?? null, cascade = $('#spCascade').checked;
+  let i = S.lines.indexOf(menuLine);
+  menuLine.sp = id;
+  if(cascade){ for(i = i + 1; i < S.lines.length && (S.lines[i].sp ?? null) === old; i++) S.lines[i].sp = id; }
+  $('#spkMenu').hidden = true; save(); repaintAllSp();
+});
 
 /* ============ 메모 ============ */
 const memoEl = $('#memo');
@@ -675,7 +777,8 @@ function starLatest(){
   if(!text){ toast('아직 가져올 발언이 없습니다.'); return; }
   const t = interimText ? (segStart ?? now()) : last.t;
   if(!interimText && last){ last.star = true; const el = linesEl.querySelector(`[data-id="${last.id}"]`); el && el.classList.add('star'); }
-  insertMemo(`★ [${fmt(t)}] "${text}" → `, true);
+  const who = spkName(interimText ? S.curSpk : last.sp);
+  insertMemo(`★ [${fmt(t)}] ${who ? who + ': ' : ''}"${text}" → `, true);
   // 커서를 화살표 뒤(같은 줄)로
   const p = memoEl.value.lastIndexOf('→ ') + 2; memoEl.setSelectionRange(p, p);
 }
@@ -765,10 +868,11 @@ document.addEventListener('click', () => $$('.dd-menu').forEach(x => x.hidden = 
 /* 회의 정보 */
 const metaMap = { '#title': 'title', '#mDate': 'date', '#mPlace': 'place', '#mAtt': 'attendees' };
 for(const [sel, k] of Object.entries(metaMap)) $(sel).addEventListener('input', e => { S.meta[k] = e.target.value; save(); });
+$('#mAtt').addEventListener('input', () => renderSpkBar());
 function fillMeta(){ for(const [sel, k] of Object.entries(metaMap)) $(sel).value = S.meta[k] || ''; memoEl.value = S.memo || ''; }
 
 /* ============ 저장 / 내보내기 ============ */
-function linesText(lines = S.lines){ return lines.map(l => `[${fmt(l.t)}] ${l.star ? '★ ' : ''}${l.text}`).join('\n'); }
+function linesText(lines = S.lines){ return lines.map(l => `[${fmt(l.t)}] ${spkName(l.sp) ? spkName(l.sp) + ': ' : ''}${l.star ? '★ ' : ''}${l.text}`).join('\n'); }
 function fullText(){
   const m = S.meta; const parts = [
     `■ ${m.title || '간담회 기록'}`, `· 일시: ${m.date || ''}`, `· 장소: ${m.place || ''}`, `· 참석: ${m.attendees || ''}`, `· 녹음 시간: ${fmtClock(now())}`, '',
@@ -822,7 +926,7 @@ $('#btnNew').onclick = async () => {
   await IDB.delSid(S.sid);
   for(const k in segBlobs) delete segBlobs[k];
   S = fresh(); playerSeg = null; audio.removeAttribute('src');
-  fillMeta(); renderAllLines(); refreshPlayer(); renderResult(); saveNow(); updateUI();
+  spkEdit = false; fillMeta(); renderAllLines(); renderSpkBar(); refreshPlayer(); renderResult(); saveNow(); updateUI();
   $('#timer').textContent = '00:00:00'; showTab('memo'); $('#title').focus();
   toast('🆕 새 회의를 시작합니다.');
 };
@@ -889,19 +993,24 @@ function mask(t){ return String(t || '').replace(/01[016789][-.\s]?\d{3,4}[-.\s]
 
 /* 프롬프트 */
 function metaBlock(){ const m = S.meta; return `- 간담회명: ${m.title || '(미입력)'}\n- 일시: ${m.date || '(미입력)'}\n- 장소: ${m.place || '(미입력)'}\n- 참석자: ${m.attendees || '(미입력)'}`; }
+function spkHint(){
+  if(!S.lines.some(l => spkName(l.sp))) return '';
+  const t = linesText().slice(0, 40000);
+  return `\n[현장 발언자 기록]\n작성자가 현장에서 직접 표시한 발언자와 대략적인 시각입니다. 실시간 음성인식이라 문장은 부정확하지만, 발언자 이름과 순서는 작성자가 확인한 것입니다. 녹음의 목소리·시각과 대조하여 화자 이름을 정확히 붙이는 데 활용하세요.\n${t}\n`;
+}
 function transcribePrompt(segInfo){
   return `다음은 현장 간담회 녹음입니다.
 [간담회 정보]
 ${metaBlock()}
-${segInfo}
+${segInfo}${spkHint()}
 [작업] 녹음을 처음부터 끝까지 빠짐없이 한국어로 전사하세요.
 [규칙]
-1. 화자를 구분하여 '화자1', '화자2' 형식으로 표시하세요. 참석자 정보나 발언 내용(호칭, 자기소개)으로 신원을 추정할 수 있으면 '화자1(○○과장)'처럼 괄호에 적으세요.
+1. 모든 발언에 발언자를 반드시 표시하세요. [현장 발언자 기록]이 있으면 그 이름을 우선 사용하고, 같은 목소리에는 끝까지 같은 이름을 쓰세요. 기록에 없는 사람은 '화자1', '화자2'로 표시하고, 호칭·자기소개로 신원을 추정할 수 있으면 '화자1(○○과장 추정)'처럼 적으세요.
 2. 각 발언 앞에 회의 시작 기준 시각을 [mm:ss] 또는 [h:mm:ss]로 적으세요.
 3. "어", "음" 같은 군말은 빼되 의미는 절대 바꾸지 마세요. 요약하지 말고 발언을 그대로 옮기세요.
 4. 알아듣기 어려운 부분은 (청취 불가)로 표시하세요.
 5. 출력은 전사문만, 아래 형식으로:
-[00:12] 화자1(○○과장): 발언 내용
+[00:12] 김○○ 이장: 발언 내용
 [00:31] 화자2: 발언 내용`;
 }
 function summaryPrompt(transcript, memo){
@@ -916,6 +1025,7 @@ ${metaBlock()}
 - [작성자 메모]는 작성자가 현장에서 중요하다고 판단한 내용입니다. ★ 표시, [건의], [조치필요], [확인필요] 태그가 붙은 내용은 반드시 반영하세요.
 - 음성 인식 오류로 보이는 단어는 문맥에 맞게 바로잡되 의미를 바꾸지 마세요.
 - 행정 보고서체(~함, ~임, ~ 예정, ~ 요청)로 간결하게 쓰세요.
+- 전사본의 발언자 이름을 그대로 사용해, 건의·답변마다 누가 말했는지 명시하세요(예: "○ (김○○ 이장) 마을안길 포장 건의 / - (○○과장) 내년 예산 반영 검토 답변"). 발언자를 모르면 "참석자"로 쓰세요.
 
 [항목]
 - title: 간담회 명칭
@@ -930,8 +1040,8 @@ ${metaBlock()}
  ○ 참석: …
  ○ 목적: …
 □ 주요 건의사항 및 답변
- ○ (분야) 건의 내용 요약
-  - (답변) 현장 답변 요약
+ ○ (분야) 건의 내용 요약 (발언자)
+  - (답변) 현장 답변 요약 (답변자)
 □ 향후 조치계획
  ○ …
 □ 행정 시사점
@@ -1105,7 +1215,12 @@ $$('.modal').forEach(m => m.addEventListener('click', e => { if(e.target === m &
 
 /* ============ 단축키 ============ */
 document.addEventListener('keydown', e => {
-  const ctl = (e.ctrlKey || e.altKey) && !e.metaKey;
+  const ctl = e.ctrlKey && !e.altKey && !e.metaKey;
+  if(e.altKey && !e.ctrlKey && !e.metaKey && /^Digit\d$/.test(e.code)){
+    e.preventDefault(); const n = +e.code.slice(5);
+    if(n === 0) setCur(null); else if(S.speakers[n - 1]) setCur(S.speakers[n - 1].id);
+    return;
+  }
   if(e.key === 'F2' || (ctl && e.code === 'Digit1')){ e.preventDefault(); stampTime(); }
   else if(e.key === 'F4' || (ctl && e.code === 'Digit2')){ e.preventDefault(); starLatest(); }
   else if(e.key === 'F9' || (ctl && e.code === 'Digit3')){ e.preventDefault(); toggleRec(); }
@@ -1119,7 +1234,9 @@ $('#btnStop').onclick = stopRecording;
   const fs = localStorage.getItem('meetnote.fs'); if(fs) setFs(+fs);
   const lw = localStorage.getItem('meetnote.left'); if(lw) document.documentElement.style.setProperty('--left', lw);
   if(!S.meta.date) S.meta.date = todayStr();
-  fillMeta(); renderAllLines(); renderResult(); updateUI();
+  if(!Array.isArray(S.speakers)) S.speakers = [];
+  if(S.curSpk === undefined || (S.curSpk && !spk(S.curSpk))) S.curSpk = null;
+  fillMeta(); renderAllLines(); renderSpkBar(); renderResult(); updateUI();
   $('#timer').textContent = fmtClock(S.elapsed);
   if(navigator.share) $('#shareBtn').hidden = false;
   if(isTouch){ $('#editHint').textContent = '✏ 버튼으로 고치고, 시각을 누르면 다시 듣기'; }
