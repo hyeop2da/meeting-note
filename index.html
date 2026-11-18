@@ -240,7 +240,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
         <b>시작하는 방법</b>
         <ol>
           <li>위의 <b>‘● 녹음 시작’</b>을 누르고, 마이크 사용을 <b>허용</b>하세요.</li>
-          <li>말하는 내용이 이 창에 글자로 나타납니다. (제미나이 전사: 약 20초 간격으로 한꺼번에 / 기기 음성인식: 즉시)</li>
+          <li>말하는 내용이 이 창에 글자로 나타납니다. (제미나이 전사: 약 30초 간격으로 한꺼번에 / 기기 음성인식: 즉시)</li>
           <li><b>발언자가 바뀌면 위의 이름 버튼</b>을 눌러 주세요. 이후 발언에 이름이 붙습니다. (회의 정보에 참석자를 적어 두면 ‘📋 참석자 명단 불러오기’로 버튼이 한 번에 만들어집니다)</li>
           <li>오른쪽 메모장에 자유롭게 메모하세요. <b>🕐 시각</b> 버튼은 현재 시각을, <b>⭐ 방금 발언</b> 버튼은 방금 나온 말을 메모로 가져옵니다.</li>
           <li>휴식 시간에는 <b>일시정지</b>, 간담회가 끝나면 <b>‘■ 종료’</b>를 누르세요.</li>
@@ -369,7 +369,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
     <label>실시간 전사 방식</label>
     <label class="opt"><input type="radio" name="engine" value="gemini">
       <div><b>☁ 제미나이 준실시간 (권장)</b>
-      <span>녹음을 약 20초마다 제미나이로 보내 글자로 바꿉니다. iPad에서도 안정적이고 정확합니다. 말한 뒤 10~30초 후에 화면에 나타납니다.</span></div></label>
+      <span>녹음을 약 30초마다 제미나이로 보내 글자로 바꿉니다. iPad에서도 안정적이고 정확합니다. 말한 뒤 10~30초 후에 화면에 나타납니다.</span></div></label>
     <label class="opt"><input type="radio" name="engine" value="browser">
       <div><b>📱 기기 음성인식</b>
       <span>즉시 표시되고 API가 필요 없습니다. 다만 iPad 사파리에서는 인식이 드문드문 끊길 수 있습니다.</span></div></label>
@@ -377,7 +377,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
       <div><b>⛔ 실시간 전사 끄기</b>
       <span>녹음만 합니다. 끝난 뒤 ‘AI 회의록’으로 정리합니다. 녹음 중에는 음성이 외부로 나가지 않습니다.</span></div></label>
     <div class="row" style="margin-top:8px"><span class="small">제미나이 전사 간격</span>
-      <select id="chunkSel" style="width:auto"><option value="15">15초 (빠름)</option><option value="20">20초 (권장)</option><option value="30">30초 (정확)</option></select></div>
+      <select id="chunkSel" style="width:auto"><option value="20">20초 (빠름)</option><option value="30">30초 (권장)</option><option value="45">45초</option><option value="60">60초 (한도 절약)</option></select></div>
 
     <div class="row" style="margin-top:12px"><button id="txTest">🧪 전사 시험 (5초 말해 보기)</button></div>
     <div class="small" id="txTestOut" style="margin-top:6px;line-height:1.6"></div>
@@ -387,7 +387,7 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
     <div class="small" style="margin-top:6px">기본은 ‘Flash’ 계열(빠르고 무료 한도가 넉넉함)을 권장합니다. ‘연결 확인’을 누르면 사용 가능한 모델 목록이 갱신됩니다.</div>
     <div class="warn" style="margin-top:16px">
       🔒 <b>보안 안내</b><br>
-      · ‘제미나이 준실시간 전사’를 쓰면 <b>녹음 음성이 약 20초마다 구글 서버로 전송</b>됩니다. 민감한 간담회는 ‘기기 음성인식’ 또는 ‘전사 끄기’를 선택하세요.<br>
+      · ‘제미나이 준실시간 전사’를 쓰면 <b>녹음 음성이 약 30초마다 구글 서버로 전송</b>됩니다. 민감한 간담회는 ‘기기 음성인식’ 또는 ‘전사 끄기’를 선택하세요.<br>
       · API 키는 <b>이 기기의 브라우저에만</b> 저장되며 다른 곳으로 전송되지 않습니다(구글 호출 시에만 사용).<br>
       · <b>무료 등급</b>으로 보낸 내용은 구글의 서비스 개선에 활용될 수 있습니다. 개인정보·민감 사안이 포함된 간담회는 ‘빠른 정리’(텍스트만 전송) 또는 AI 정리를 생략하세요.
     </div>
@@ -681,7 +681,7 @@ let chunkSec = 20, activeEngine = null;
 const txQueue = [], failedJobs = [];
 let txBusy = false, txBanner = false;
 let txSource = 'pcm', recChunk = null, recTimer = null, silentRun = 0, lvl = 0;
-let txActive = 0; const TX_PAR = 2, txInflight = new Set();
+let txActive = 0; const TX_PAR = 1, txInflight = new Set(); let lastReqAt = 0; const modelCool = {};
 const txTimeout = () => (+localStorage.getItem('meetnote.txtimeout') || 45) * 1000;
 // 전사용 모델: 느린 Pro 계열은 피하고 빠른 Flash 계열을 사용
 function liveModel(){
@@ -694,7 +694,7 @@ function liveModel(){
 const stats = { chunks: 0, silent: 0, sent: 0, lines: 0, empty: 0, emptyRun: 0, decodeFail: 0 };
 function resetStats(){ Object.keys(stats).forEach(k => stats[k] = 0); txSource = 'pcm'; silentRun = 0; lvl = 0; }
 function getEngine(){ const e = localStorage.getItem('meetnote.engine'); return ['gemini', 'browser', 'off'].includes(e) ? e : (getKey() ? 'gemini' : 'browser'); }
-function getChunkSec(){ return Math.min(60, Math.max(5, +(localStorage.getItem('meetnote.chunk') || 20))); }
+function getChunkSec(){ return Math.min(60, Math.max(5, +(localStorage.getItem('meetnote.chunk') || 30))); }
 function chooseEngine(){
   let e = getEngine();
   if(e === 'gemini' && !getKey()){ e = SR ? 'browser' : 'off'; showBanner('⚠ 제미나이 API 키가 없어 기기 음성인식으로 시작합니다. (⚙ 설정에서 키를 등록하면 더 정확한 전사를 쓸 수 있어요)', true); }
@@ -722,7 +722,7 @@ function onPCM(e){
     }
   }
   // 정해진 길이가 지나면, 말이 잠깐 쉬는 지점에서 끊어 단어가 잘리지 않게 함 (최대 +6초)
-  const target = (pcm.first ? Math.min(10, chunkSec) : chunkSec) * PCM_HZ;   // 첫 구간은 짧게 끊어 빨리 확인
+  const target = (pcm.first ? Math.min(15, chunkSec) : chunkSec) * PCM_HZ;   // 첫 구간은 짧게 끊어 빨리 확인
   if(pcm.n >= target){
     const avg = Math.sqrt(pcm.sq / pcm.n);
     if(blockRms <= avg * 0.4 || pcm.n >= target + 6 * PCM_HZ) flushPCM();
@@ -751,7 +751,7 @@ function submitSamples(i16, t0, final){
   silentRun = 0;
   if(peak < 16000){ const g = Math.min(30, 26000 / Math.max(peak, 1)); for(let i = 0; i < n; i++) i16[i] = Math.max(-32768, Math.min(32767, i16[i] * g)); }   // 작은 소리 키우기
   stats.sent++;
-  enqueueTx({ sid: S.sid, blob: encodeWav(i16), t0, t1: t0 + n / PCM_HZ, tries: 0 });
+  enqueueTx({ sid: S.sid, i16, t0, t1: t0 + n / PCM_HZ, tries: 0 });
 }
 
 /* ---- 보조 입력 방식: 녹음기로 구간 파일을 만들어 해독 (웹오디오 입력이 무음일 때 자동 전환) ---- */
@@ -816,29 +816,65 @@ function watchPCM(){
     }
   }, 3500);
 }
-function enqueueTx(job){ txQueue.push(job); renderTxStat(); pumpTx(); }
+function enqueueTx(job){ if(quotaExhausted()){ failedJobs.push(job); renderTxStat(); return; } txQueue.push(job); renderTxStat(); pumpTx(); }
 function pumpTx(){
   while(txActive < TX_PAR && txQueue.length){ txActive++; txWorker(); }
   txBusy = txActive > 0; renderTxStat();
 }
+// 한도 때문에 간격을 자동으로 늘림 (요청 수 줄이기)
+function boostChunk(){
+  if(chunkSec >= 90) return;
+  chunkSec = Math.min(90, Math.round(chunkSec * 1.5));
+  if(pcm.arr){ const na = new Int16Array(PCM_HZ * (chunkSec + 8)); na.set(pcm.arr.subarray(0, pcm.n)); pcm.arr = na; }
+  toast(`⏱ 사용량 한도 때문에 전사 간격을 ${chunkSec}초로 늘렸습니다.`, 3500);
+}
+// 밀린 구간이 이어져 있으면 한 번에 보내 요청 수를 줄임
+function mergeBacklog(job){
+  while(job.i16 && txQueue.length){
+    const nx = txQueue[0];
+    if(!nx.i16 || nx.sid !== job.sid || Math.abs(nx.t0 - job.t1) > 2 || (nx.t1 - job.t0) > 90) break;
+    const m = new Int16Array(job.i16.length + nx.i16.length); m.set(job.i16); m.set(nx.i16, job.i16.length);
+    job.i16 = m; job.t1 = nx.t1; job.blob = null; txQueue.shift();
+  }
+}
+function quotaExhausted(){ return !pickModel(liveModel()) && nextWake() - Date.now() > 5 * 60 * 1000; }
+function giveUpGemini(e){
+  const q = e && e.quota;
+  showBanner('⚠ 제미나이 무료 사용량을 오늘 모두 사용했습니다' + (q && q.limit ? ` (모델당 하루 ${q.limit}회)` : '') + '. ' + (SR && mode === 'recording' ? '기기 음성인식으로 전환했습니다. ' : '') + '녹음은 계속 저장됩니다. 내일 다시 쓰거나, Google AI Studio에서 결제(종량제)를 연결하면 한도가 크게 늘어납니다.', true);
+  txBanner = false;
+  if(SR && mode === 'recording' && activeEngine === 'gemini'){ activeEngine = 'browser'; startRecog(); setStatus(); }
+}
 async function txWorker(){
   try{
     while(txQueue.length){
-      const job = txQueue.shift(); job.tStart = performance.now(); txInflight.add(job); renderTxStat();
+      const job = txQueue.shift(); job.tStart = performance.now(); txInflight.add(job);
+      mergeBacklog(job); renderTxStat();
+      const gap = lastReqAt + 4000 - Date.now(); if(gap > 0) await sleep(gap);   // 요청 사이 최소 간격
+      lastReqAt = Date.now();
       try{
         const added = await runTx(job);
         stats.lastMs = Math.round((performance.now() - job.tStart) / 100) / 10; stats.retryMsg = '';
+        job.i16 = null; job.blob = null;
         if(added && txBanner){ hideBanner(); txBanner = false; }
       } catch(e){
-        job.tries++; stats.retryMsg = String(e.message || e).split('\n')[0].slice(0, 50);
-        const auth = e.status === 401 || e.status === 403 || e.status === 404;
-        const fatal = auth || e.status === 400;
-        if(!fatal && job.tries < 3){ txInflight.delete(job); await sleep(e.status === 429 ? 20000 : 3000 * job.tries); txQueue.unshift(job); }
-        else {
-          failedJobs.push(job);
-          if(auth){ while(txQueue.length) failedJobs.push(txQueue.shift()); }
-          txBanner = true;
-          showBanner('⚠ 제미나이 전사 실패: ' + String(e.message || e).split('\n')[0] + ' · 녹음은 계속 저장되며, 끝난 뒤 ‘AI 회의록’ 정밀 정리로 복구할 수 있습니다.', true);
+        stats.retryMsg = describeErr(e);
+        if(e.rotate || e.allCooling){                       // 한도·혼잡: 시도 횟수에 넣지 않고 다른 모델로
+          job.rot = (job.rot || 0) + 1;
+          if(e.quota) boostChunk();
+          if(job.rot > 40){ failedJobs.push(job); }
+          else if(pickModel(liveModel())){ txQueue.unshift(job); }
+          else if(quotaExhausted()){ failedJobs.push(job); while(txQueue.length) failedJobs.push(txQueue.shift()); giveUpGemini(e); }
+          else { txInflight.delete(job); await sleep(Math.max(2000, Math.min(60000, nextWake() - Date.now()))); txQueue.unshift(job); }
+        } else {
+          job.tries++;
+          const auth = e.status === 401 || e.status === 403, fatal = auth || e.status === 400;
+          if(!fatal && job.tries < 3){ txInflight.delete(job); await sleep(3000 * job.tries); txQueue.unshift(job); }
+          else {
+            failedJobs.push(job);
+            if(auth){ while(txQueue.length) failedJobs.push(txQueue.shift()); }
+            txBanner = true;
+            showBanner('⚠ 제미나이 전사 실패: ' + String(e.message || e).split('\n')[0] + ' · 녹음은 계속 저장되며, 끝난 뒤 ‘AI 회의록’ 정밀 정리로 복구할 수 있습니다.', true);
+          }
         }
       } finally { txInflight.delete(job); }
       renderTxStat();
@@ -867,12 +903,15 @@ ${names.length ? `[알려진 발언자] ${names.join(', ')}\n` : ''}${m.attendee
 }
 function spkAt(t){ let id = null; for(const e of S.spkLog){ if(e.t <= t + 0.3) id = e.sp; else break; } return id && spk(id) ? id : null; }
 async function runTx(job){
+  if(!job.blob) job.blob = encodeWav(job.i16);
   const b64 = await blobToB64(job.blob);
   const mime = (job.blob.type || 'audio/wav').split(';')[0];
-  const call = m => generate([{ inline_data: { mime_type: mime, data: b64 } }, { text: liveTxPrompt(job) }], { json: true, schema: TX_SCHEMA, model: m, timeoutMs: txTimeout(), noThink: true });
+  const model = pickModel(liveModel());
+  if(!model){ const er = new Error('모든 모델이 한도 대기 중입니다'); er.allCooling = true; throw er; }
   let r;
-  try{ r = await call(liveModel()); }
-  catch(e){ if(e.status === 404 && liveModel() !== getModel()){ localStorage.setItem('meetnote.livemodel', getModel()); r = await call(getModel()); } else throw e; }
+  try{ r = await generate([{ inline_data: { mime_type: mime, data: b64 } }, { text: liveTxPrompt(job) }], { json: true, schema: TX_SCHEMA, model, timeoutMs: txTimeout(), noThink: true }); }
+  catch(e){ if(coolOnError(model, e)) e.rotate = true; throw e; }
+  stats.model = model;
   if(job.sid !== S.sid) return 0;           // 그 사이 새 회의를 시작했다면 버림
   let arr; try{ arr = JSON.parse(r.text); } catch { throw new Error('제미나이 응답을 해석하지 못했습니다'); }
   if(!Array.isArray(arr)) arr = [];
@@ -911,9 +950,9 @@ setInterval(() => {
   if(activeEngine !== 'gemini') return;
   const q = txQueue.length + txActive; let msg = '';
   let wait = 0; txInflight.forEach(j => { wait = Math.max(wait, (performance.now() - j.tStart) / 1000); });
-  const tail = (q ? ` · 전사 대기 ${q}` : '') + (wait > 8 ? ` · 응답 기다리는 중 ${Math.round(wait)}초` : '') + (stats.lastMs ? ` · 최근 응답 ${stats.lastMs}초` : '') + (stats.retryMsg ? ` · ⚠ ${stats.retryMsg}` : '');
+  const tail = (q ? ` · 전사 대기 ${q}` : '') + (wait > 8 ? ` · 응답 기다리는 중 ${Math.round(wait)}초` : '') + (stats.lastMs ? ` · 최근 응답 ${stats.lastMs}초` : '') + (stats.model ? ` · ${stats.model}` : '') + (stats.retryMsg ? ` · ⚠ ${stats.retryMsg}` : '');
   if(mode === 'recording'){
-    const tgt = pcm.first ? Math.min(10, chunkSec) : chunkSec;
+    const tgt = pcm.first ? Math.min(15, chunkSec) : chunkSec;
     const used = txSource === 'rec' ? (recChunk ? now() - recChunk.t0 : 0) : pcm.n / PCM_HZ;
     const left = Math.max(0, Math.ceil(tgt - used));
     const L = Math.min(8, Math.round(Math.sqrt(lvl) * 20)), bar = '▮'.repeat(L) + '▯'.repeat(8 - L);
@@ -1241,7 +1280,7 @@ function apiError(status, raw){
   const map = { 400: '요청을 처리할 수 없습니다 (API 키 또는 파일 형식 확인)', 401: 'API 키가 올바르지 않습니다', 403: 'API 키 권한이 없거나 잘못된 키입니다', 404: '모델을 찾을 수 없습니다 (⚙ 설정 → 연결 확인으로 모델 목록을 갱신하세요)', 413: '파일이 너무 큽니다', 429: '무료 사용량 한도에 도달했습니다. 1~2분 뒤 다시 시도하거나, 내일 다시 시도해 주세요', 500: '구글 서버 오류입니다. 잠시 후 다시 시도해 주세요', 503: '구글 서버가 혼잡합니다. 잠시 후 다시 시도해 주세요' };
   let msg = raw; try{ msg = JSON.parse(raw).error?.message || raw; } catch {}
   const e = new Error(`${map[status] || '오류가 발생했습니다'} (${status})` + (msg ? `\n상세: ${String(msg).slice(0, 300)}` : ''));
-  e.status = status; e.detail = msg || ''; return e;
+  e.status = status; e.detail = msg || ''; e.raw = raw; return e;
 }
 async function gfetch(path, opts = {}){
   let r;
@@ -1265,6 +1304,50 @@ function rankModel(id){
   if(/(preview|exp)/.test(id)) s -= 50;
   const v = parseFloat((id.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0); s += v * 10;
   return s;
+}
+/* ---- 한도(429)·혼잡(503) 대응: 모델별 대기 + 다른 모델로 자동 전환 ---- */
+function parseQuota(e){
+  let delay = 0, daily = false, model = '', limit = '';
+  try{
+    const er = (JSON.parse(e.raw || '{}')).error || {};
+    for(const d of er.details || []){
+      if(d.retryDelay) delay = Math.max(delay, parseFloat(d.retryDelay) || 0);
+      for(const v of d.violations || []){ if(/PerDay/i.test(v.quotaId || '')) daily = true; if(v.quotaValue) limit = v.quotaValue; if(v.quotaDimensions && v.quotaDimensions.model) model = v.quotaDimensions.model; }
+    }
+    const m = String(er.message || '');
+    if(/PerDay|per day/i.test(m)) daily = true;
+    if(!limit){ const lm = m.match(/limit:\s*(\d+)/i); if(lm) limit = lm[1]; }
+    const rm = m.match(/retry in ([\d.]+)s/i); if(rm) delay = Math.max(delay, parseFloat(rm[1]));
+  } catch {}
+  return { delay, daily, model, limit };
+}
+function liveCandidates(first){
+  let list = []; try{ list = JSON.parse(localStorage.getItem('meetnote.models') || '[]').map(x => x.id); } catch {}
+  const pick = re => list.filter(id => re.test(id) && !/(preview|exp|thinking)/.test(id)).sort((a, b) => rankModel(b) - rankModel(a))[0];
+  const c = [first || liveModel(), pick(/flash-lite/), pick(/flash/), 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest'];
+  return [...new Set(c.filter(Boolean))];
+}
+function pickModel(first){ const t = Date.now(); return liveCandidates(first).find(m => (modelCool[m] || 0) <= t) || null; }
+function nextWake(){ return Math.min(...liveCandidates().map(m => modelCool[m] || 0)); }
+function coolOnError(m, e){
+  if(e.status === 429){ const q = parseQuota(e); modelCool[m] = Date.now() + (q.daily ? 6 * 3600e3 : Math.max(20, Math.min(120, q.delay || 30)) * 1000); e.quota = q; e.quotaModel = m; return true; }
+  if(e.status === 503 || e.status === 500){ modelCool[m] = Date.now() + 20000; return true; }
+  if(e.status === 404){ modelCool[m] = Date.now() + 3600e3; return true; }
+  if(e.timeout){ modelCool[m] = Date.now() + 10000; return true; }
+  return false;
+}
+function describeErr(e){
+  if(e.status === 429 && e.quota){ const q = e.quota; return `${q.daily ? '오늘 무료 한도 소진' : '분당 한도 도달'} · ${e.quotaModel}${q.limit ? ' (한도 ' + q.limit + ')' : ''} → 다른 모델로 전환`; }
+  return String(e.message || e).split('\n')[0].slice(0, 60);
+}
+async function generateRot(parts, opts = {}){      // 사용자가 고른 모델부터 시도하고, 한도·혼잡이면 다음 모델로
+  let last;
+  for(let i = 0; i < 6; i++){
+    const m = pickModel(opts.first || getModel()); if(!m) break;
+    try{ return await generate(parts, { ...opts, model: m }); }
+    catch(e){ last = e; if(!coolOnError(m, e)) throw e; }
+  }
+  throw last || new Error('사용 가능한 모델이 없습니다. 잠시 뒤 다시 시도해 주세요.');
 }
 async function generate(parts, { json = false, schema = null, model = null, timeoutMs = 0, noThink = false } = {}){
   const mk = think => {
@@ -1432,13 +1515,13 @@ async function runAI(){
       step(0, 'done'); cur = 1; step(1, 'doing');
       const segInfo = blobs.length > 1 ? `[참고] 녹음 파일 ${blobs.length}개는 순서대로 이어지는 하나의 회의입니다. 각 파일의 시작 시각: ${blobs.map((b, i) => `${i + 1}번 파일 = 회의 시작 후 ${fmt(b.start)}`).join(', ')}. 시각은 이 값을 더해 회의 전체 기준으로 적으세요.` : '';
       let r;
-      try{ r = await generate([...fileParts, { text: transcribePrompt(segInfo) }]); }
+      try{ r = await generateRot([...fileParts, { text: transcribePrompt(segInfo) }]); }
       catch(e){
         // 일부 환경에서 audio/webm 형식을 거부하면 video/webm으로 한 번 더 시도
         if(e.status === 400 && /mime|format|support/i.test(e.detail)){
           const swap = m => m.replace(/^audio\/(x-m4a|m4a|mp4)$/, 'video/mp4').replace(/^audio\/webm$/, 'video/webm');
           const alt = fileParts.map(p => p.file_data ? { file_data: { ...p.file_data, mime_type: swap(p.file_data.mime_type) } } : p.inline_data ? { inline_data: { ...p.inline_data, mime_type: swap(p.inline_data.mime_type) } } : p);
-          r = await generate([...alt, { text: transcribePrompt(segInfo) }]);
+          r = await generateRot([...alt, { text: transcribePrompt(segInfo) }]);
         } else throw e;
       }
       transcript = r.text.trim();
@@ -1449,7 +1532,7 @@ async function runAI(){
     }
     if(useMask) transcript = mask(transcript);
     step(cur, 'doing');
-    const r2 = await generate([{ text: summaryPrompt(transcript, memo) }], { json: true, schema: SCHEMA });
+    const r2 = await generateRot([{ text: summaryPrompt(transcript, memo) }], { json: true, schema: SCHEMA });
     let data; try{ data = JSON.parse(r2.text); } catch { data = { overview: '', keyPoints: [], requests: [], actions: [], report: r2.text }; }
     step(cur, 'done');
     S.result = { at: Date.now(), mode: aimode, model: getModel(), transcript: aimode === 'audio' ? transcript : '', data };
@@ -1534,9 +1617,9 @@ $('#txTest').onclick = async () => {
     let peak = 0; for(let i = 0; i < i16.length; i++){ const a = Math.abs(i16[i]); if(a > peak) peak = a; }
     if(peak < 16000){ const g = Math.min(30, 26000 / Math.max(peak, 1)); for(let i = 0; i < i16.length; i++) i16[i] = Math.max(-32768, Math.min(32767, i16[i] * g)); }
     const wav = encodeWav(i16), b64 = await blobToB64(wav);
-    const r = await generate([{ inline_data: { mime_type: 'audio/wav', data: b64 } }, { text: '이 녹음을 한국어로 들리는 그대로 전사하세요. 말소리가 없으면 "(말소리 없음)"이라고만 쓰세요.' }], { model: liveModel(), timeoutMs: txTimeout(), noThink: true });
-    out.textContent = `✅ 성공 · 응답 ${((performance.now() - t0) / 1000).toFixed(1)}초 · 입력 소리 ${(rms * 100).toFixed(1)}% · 모델 ${liveModel()} → “${r.text.trim().slice(0, 120)}”`;
-  } catch(e){ out.textContent = '❌ 실패: ' + String(e.message || e).split('\n')[0] + (e.status ? ` (${e.status})` : ''); }
+    const r = await generateRot([{ inline_data: { mime_type: 'audio/wav', data: b64 } }, { text: '이 녹음을 한국어로 들리는 그대로 전사하세요. 말소리가 없으면 "(말소리 없음)"이라고만 쓰세요.' }], { first: liveModel(), timeoutMs: txTimeout(), noThink: true });
+    out.textContent = `✅ 성공 · 응답 ${((performance.now() - t0) / 1000).toFixed(1)}초 · 입력 소리 ${(rms * 100).toFixed(1)}% → “${r.text.trim().slice(0, 120)}”`;
+  } catch(e){ out.textContent = '❌ 실패: ' + (e.status === 429 && e.quota ? describeErr(e) : String(e.message || e).split('\n')[0]) + (e.status ? ` (${e.status})` : ''); }
 };
 $('#chunkSel').onchange = e => localStorage.setItem('meetnote.chunk', e.target.value);
 $('#btnSettings').onclick = openSettings;
