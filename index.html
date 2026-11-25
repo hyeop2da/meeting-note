@@ -145,6 +145,10 @@ table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
 th{background:#f4f6fa;font-weight:600;white-space:nowrap}
 .sec-t{font-weight:700;margin:16px 0 8px}
+.brief-h{font-size:calc(var(--fs) + 1px);font-weight:700;padding:12px 14px;background:var(--accent-weak);border-left:4px solid var(--accent);border-radius:8px;line-height:1.5}
+#briefBox ul{margin:0;padding-left:20px;line-height:1.7}
+#briefBox li{margin-bottom:4px}
+.msgbox{background:#f6f8fb;border:1px solid var(--line);border-radius:10px;padding:12px 14px;white-space:pre-wrap;line-height:1.7;font-size:calc(var(--fs) - 1px)}
 .pre{white-space:pre-wrap;font-size:calc(var(--fs) - 1px);line-height:1.7}
 
 /* 모달 */
@@ -210,6 +214,9 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
       <button id="btnSave" title="저장·공유">💾<span class="lbl"> 저장</span></button>
       <div class="dd-menu" hidden>
         <button data-save="share" id="shareBtn" hidden>📤 공유 (파일 앱·카톡·메일로 보내기)</button>
+        <button data-save="hwpx-report">📄 결과보고서 (한글 HWPX)</button>
+        <button data-save="hwpx-brief">📄 요약본 (한글 HWPX)</button>
+        <button data-save="hwpx-record">📄 회의 기록 (한글 HWPX)</button>
         <button data-save="txt">📄 전체 기록 저장 (.txt)</button>
         <button data-save="doc">📝 Word 문서로 저장 (.doc)</button>
         <button data-save="audio">🎧 녹음 파일 저장</button>
@@ -313,16 +320,26 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
 
       <div class="result" id="result" hidden>
         <div class="rtabs">
-          <button class="tab on" data-r="report">결과보고 초안</button>
+          <button class="tab on" data-r="brief">요약본</button>
+          <button class="tab" data-r="report">결과보고 초안</button>
           <button class="tab" data-r="req">건의·조치사항</button>
           <button class="tab" data-r="sum">개요·핵심</button>
           <button class="tab" data-r="tr">전사본</button>
           <span style="flex:1"></span>
           <button class="ghost" id="btnRedo" title="설정을 바꿔 다시 만들기">🔄 다시 만들기</button>
         </div>
-        <div data-rv="report">
+        <div data-rv="brief">
           <div class="ractions">
-            <button class="primary" id="cpReport">📋 복사 (한글에 붙여넣기)</button>
+            <button class="primary" id="hwpBrief">📄 요약본 한글(HWPX)</button>
+            <button id="cpMsg">💬 메신저 보고문 복사</button>
+            <button id="cpBrief">📋 요약 복사</button>
+          </div>
+          <div id="briefBox"></div>
+        </div>
+        <div data-rv="report" hidden>
+          <div class="ractions">
+            <button class="primary" id="hwpReport">📄 결과보고서 한글(HWPX)</button>
+            <button id="cpReport">📋 복사 (한글에 붙여넣기)</button>
             <button id="docReport">📝 Word로 저장</button>
             <span class="small" style="align-self:center">내용을 직접 고칠 수 있으며 자동 저장됩니다.</span>
           </div>
@@ -412,12 +429,14 @@ th{background:#f4f6fa;font-weight:600;white-space:nowrap}
         <li><b>● 녹음 시작</b> → 마이크 허용. 왼쪽에 발언이 실시간으로 적힙니다.</li>
         <li>오른쪽 메모장에 메모합니다. <b>🕐 시각</b>은 시각 찍기, <b>⭐ 방금 발언</b>은 방금 나온 말을 메모로 가져오기.</li>
         <li><b>발언자</b>: 전사 창 위의 이름 버튼을 누르면 그 뒤 발언에 이름이 붙습니다. 잘못 붙은 이름은 발언 앞 <b>이름표를 눌러</b> 고칩니다(이어지는 같은 발언자 발언도 함께 변경).</li>
+        <li>녹음은 <b>10분마다 자동으로 나눠 저장</b>됩니다(다시 듣기에서 구간 선택). 긴 간담회도 정리가 빠르고 안정적입니다.</li>
         <li>휴식 땐 <b>일시정지</b>, 끝나면 <b>■ 종료</b>. 종료 후에도 <b>이어서 녹음</b>할 수 있습니다.</li>
       </ol>
       <b>간담회 후</b>
       <ol>
         <li>왼쪽 발언의 <b>시각 버튼</b>을 누르면 그 부분 녹음을 다시 들을 수 있습니다.</li>
         <li><b>✨ AI 회의록</b> 탭 → ‘AI 회의록 만들기’ → 결과보고 초안을 <b>복사</b>해 한글(HWP)에 붙여넣습니다.</li>
+        <li><b>✨ AI 회의록 → 요약본</b> 탭에서 한 줄 요지·핵심 요약·<b>메신저 보고문</b>을 바로 복사하고, <b>📄 한글(HWPX)</b> 버튼으로 결과보고서·요약본 파일을 만들 수 있습니다. AI 회의록 없이도 <b>💾 저장 → 회의 기록(한글)</b>은 가능합니다.</li>
         <li><b>💾 저장 → 📤 공유</b>로 기록·녹음 파일을 ‘파일’ 앱, 카카오톡, 메일 등으로 보내 보관하세요.</li>
       </ol>
       <b>iPad에서 쓰실 때 꼭 확인</b>
@@ -513,17 +532,8 @@ async function startRecording(){
   }
   hideBanner();
   activeEngine = chooseEngine();
-  const segNo = S.segments.reduce((m, x) => Math.max(m, x.seg + 1), 0);
-  S.segments.push({ seg: segNo, start: S.elapsed });
-  const chunks = [];
-  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
-  try{
-    recorder = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : {});
-  } catch { recorder = new MediaRecorder(stream); }
-  const rec = recorder, recStream = stream;
-  rec.ondataavailable = e => { if(e.data && e.data.size){ chunks.push(e.data); IDB.add({ sid: S.sid, seg: segNo, data: e.data, type: rec.mimeType }).catch(() => {}); } };
-  rec.onstop = () => { segBlobs[segNo] = new Blob(chunks, { type: rec.mimeType || 'audio/webm' }); recStream.getTracks().forEach(t => t.stop()); refreshPlayer(); };
-  rec.start(5000);           // 5초마다 조각 저장
+  recorder = beginSegment(S.elapsed);
+  if(!recorder){ showBanner('⚠ 이 브라우저에서 녹음을 시작할 수 없습니다. 최신 사파리·크롬으로 다시 시도해 주세요.', true); stream.getTracks().forEach(t => t.stop()); return; }
   startMeter(stream);
   mode = 'recording'; runStart = performance.now(); lastResultAt = performance.now(); warnedNoText = false;
   resetStats(); pcmReset(); if(activeEngine === 'gemini') watchPCM();
@@ -534,6 +544,36 @@ async function startRecording(){
   keepAwake(true);
   save(); updateUI();
 }
+/* 녹음은 10분마다 새 파일(구간)로 나눠 저장: 긴 녹음도 정리가 가볍고, 문제가 생겨도 잃는 양이 적음 */
+const segSec = () => +localStorage.getItem('meetnote.segsec') || 600;
+function pickRecMime(){ return ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || ''; }
+function beginSegment(startT){
+  const segNo = S.segments.reduce((m, x) => Math.max(m, x.seg + 1), 0), mime = pickRecMime();
+  let rec;
+  try{ rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : {}); }
+  catch { try{ rec = new MediaRecorder(stream); } catch { return null; } }
+  const chunks = [], recStream = stream;
+  rec.ondataavailable = e => { if(e.data && e.data.size){ chunks.push(e.data); IDB.add({ sid: S.sid, seg: segNo, data: e.data, type: rec.mimeType }).catch(() => {}); } };
+  rec.onstop = () => {
+    segBlobs[segNo] = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+    if(rec === recorder && mode === 'idle') recStream.getTracks().forEach(t => t.stop());   // 마지막 종료 때만 마이크 해제
+    refreshPlayer();
+  };
+  try{ rec.start(5000); } catch { return null; }        // 5초마다 조각 저장
+  S.segments.push({ seg: segNo, start: startT });
+  return rec;
+}
+function rotateSegment(){
+  if(mode !== 'recording' || !recorder || recorder.state !== 'recording' || !stream) return;
+  const last = S.segments[S.segments.length - 1];
+  if(!last || now() - last.start < segSec()) return;
+  const old = recorder, nu = beginSegment(now());      // 새 녹음기를 먼저 켜고 이전 것을 끔(끊김 방지)
+  if(!nu) return;
+  recorder = nu;
+  try{ old.stop(); } catch {}
+  save();
+}
+setInterval(rotateSegment, 2000);
 function pauseRecording(){
   flushPCM(true); endRecSource(); liveStop();
   S.elapsed = now(); mode = 'paused';
@@ -927,7 +967,7 @@ async function runTx(job){
   catch(e){ if(coolOnError(model, e)) e.rotate = true; throw e; }
   stats.model = model;
   if(job.sid !== S.sid) return 0;           // 그 사이 새 회의를 시작했다면 버림
-  let arr; try{ arr = JSON.parse(r.text); } catch { throw new Error('제미나이 응답을 해석하지 못했습니다'); }
+  let arr; try{ arr = parseLoose(r.text, '['); } catch { throw new Error('제미나이 응답을 해석하지 못했습니다'); }
   if(!Array.isArray(arr)) arr = [];
   const dur = job.t1 - job.t0; let added = 0;
   for(const it of arr){
@@ -1422,6 +1462,9 @@ $$('[data-save]').forEach(b => b.onclick = () => {
   if(k === 'doc') saveDoc();
   if(k === 'audio') saveAudio();
   if(k === 'copy') copyText(fullText());
+  if(k === 'hwpx-report') saveHwpx('report');
+  if(k === 'hwpx-brief') saveHwpx('brief');
+  if(k === 'hwpx-record') saveHwpx('record');
   if(k === 'share') shareAll();
 });
 async function shareAll(){
@@ -1499,7 +1542,7 @@ function parseQuota(e){
 function liveCandidates(first){
   let list = []; try{ list = JSON.parse(localStorage.getItem('meetnote.models') || '[]').map(x => x.id); } catch {}
   const pick = re => list.filter(id => re.test(id) && !/(preview|exp|thinking)/.test(id)).sort((a, b) => rankModel(b) - rankModel(a))[0];
-  const c = [first || liveModel(), pick(/flash-lite/), pick(/flash/), 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest'];
+  const c = [first || liveModel(), pick(/flash-lite/), pick(/flash/), 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3-flash-preview', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'];
   return [...new Set(c.filter(Boolean))];
 }
 function pickModel(first){ const t = Date.now(); return liveCandidates(first).find(m => (modelCool[m] || 0) <= t) || null; }
@@ -1524,30 +1567,53 @@ async function generateRot(parts, opts = {}){      // 사용자가 고른 모델
   }
   throw last || new Error('사용 가능한 모델이 없습니다. 잠시 뒤 다시 시도해 주세요.');
 }
+// 모델마다 '생각 끄기' 설정 방식이 달라서(3.x: thinkingLevel, 2.x: thinkingBudget) 통한 방식을 기억해 재요청을 줄임
+const thinkMode = {}, jsonBad = {};
 async function generate(parts, { json = false, schema = null, model = null, timeoutMs = 0, noThink = false } = {}){
-  const mk = think => {
+  const mdl = model || getModel(), isTx = /transcribe/.test(mdl);
+  const mk = (tm, useJson) => {
     const body = { contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.2 } };
-    if(json){ body.generationConfig.responseMimeType = 'application/json'; if(schema) body.generationConfig.responseSchema = schema; }
-    if(think) body.generationConfig.thinkingConfig = { thinkingBudget: 0 };     // 짧은 전사에는 '생각 시간'이 필요 없음
+    if(useJson){ body.generationConfig.responseMimeType = 'application/json'; if(schema) body.generationConfig.responseSchema = schema; }
+    if(tm === 'level') body.generationConfig.thinkingConfig = { thinkingLevel: 'minimal' };
+    else if(tm === 'budget') body.generationConfig.thinkingConfig = { thinkingBudget: 0 };
     return body;
   };
-  const call = async think => {
-    const ctl = timeoutMs ? new AbortController() : null, tm = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : 0;
+  const call = async (tm, useJson) => {
+    const ctl = timeoutMs ? new AbortController() : null, tmr = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : 0;
     try{
-      const r = await gfetch(`/v1beta/models/${encodeURIComponent(model || getModel())}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mk(think)), ...(ctl ? { signal: ctl.signal } : {}) });
+      const r = await gfetch(`/v1beta/models/${encodeURIComponent(mdl)}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mk(tm, useJson)), ...(ctl ? { signal: ctl.signal } : {}) });
       return await r.json();
     } catch(e){
       if(e && e.name === 'AbortError'){ const er = new Error('응답이 너무 늦어 중단했습니다'); er.timeout = true; throw er; }
       throw e;
-    } finally { clearTimeout(tm); }
+    } finally { clearTimeout(tmr); }
   };
-  let j;
-  try{ j = await call(noThink); }
-  catch(e){ if(noThink && e.status === 400 && /think/i.test(e.detail || '')) j = await call(false); else throw e; }
+  // 전사 전용 모델은 JSON·생각 설정을 받지 않으므로 보내지 않음
+  let tm = (noThink && !isTx) ? (thinkMode[mdl] || (/gemini-3/.test(mdl) ? 'level' : 'budget')) : 'none';
+  let useJson = json && !isTx && !jsonBad[mdl];
+  const tried = new Set(); let j;
+  for(let k = 0; k < 4; k++){
+    tried.add(tm);
+    try{ j = await call(tm, useJson); break; }
+    catch(e){
+      if(e.status === 400 && tm !== 'none' && /think/i.test(e.detail || '')){ tm = !tried.has('level') ? 'level' : !tried.has('budget') ? 'budget' : 'none'; continue; }
+      if(e.status === 400 && useJson && /json|mime|schema/i.test(e.detail || '')){ jsonBad[mdl] = true; useJson = false; continue; }
+      throw e;
+    }
+  }
+  if(noThink && !isTx) thinkMode[mdl] = tm;
   const c = j.candidates?.[0];
   const text = (c?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
   if(!text) throw new Error('AI 응답이 비어 있습니다.' + (c?.finishReason ? ` (사유: ${c.finishReason})` : '') + (j.promptFeedback?.blockReason ? ` (차단: ${j.promptFeedback.blockReason})` : ''));
   return { text, finish: c.finishReason };
+}
+// 코드 블록(```json)이나 앞뒤 설명이 붙어도 JSON 부분만 꺼내 읽음
+function parseLoose(text, open){
+  const t = String(text || '').replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  try{ return JSON.parse(t); } catch {}
+  const close = open === '[' ? ']' : '}', a = t.indexOf(open), b = t.lastIndexOf(close);
+  if(a >= 0 && b > a) return JSON.parse(t.slice(a, b + 1));
+  throw new Error('parse');
 }
 async function uploadFile(blob, name){
   const mime = (blob.type || 'audio/webm').split(';')[0];
@@ -1624,6 +1690,7 @@ ${metaBlock()}
  ○ …
 □ 행정 시사점
  ○ …
+${BRIEF_RULES}
 
 [작성자 메모]
 ${memo || '(없음)'}
@@ -1631,17 +1698,104 @@ ${memo || '(없음)'}
 [전사본]
 ${transcript}`;
 }
+/* ---- 구간별 정밀 전사 ---- */
+// 녹음이 10분 이하 구간들로 나뉘어 있으면 구간별로 처리(긴 단일 녹음·외부 파일은 기존 방식)
+function segPlan(){
+  const list = S.segments.filter(x => segBlobs[x.seg]).sort((a, b) => a.start - b.start);
+  if(!list.length) return null;
+  const out = list.map(x => {
+    const nx = S.segments.filter(y => y.start > x.start).sort((a, b) => a.start - b.start)[0];
+    const end = nx ? nx.start : S.elapsed;
+    return { blob: segBlobs[x.seg], start: x.start, dur: Math.max(1, end - x.start), name: `${safeName()}_${x.seg + 1}` };
+  });
+  return out.every(b => b.dur <= 15 * 60) ? out : null;
+}
+function segPrompt(b, memo){
+  const end = b.start + b.dur;
+  const near = S.lines.filter(l => l.t >= b.start - 30 && l.t <= end + 30)
+    .map(l => `[${fmt(Math.max(0, l.t - b.start))}] ${spkName(l.sp) ? spkName(l.sp) + ': ' : ''}${l.text}`).join('\n').slice(0, 12000);
+  const names = S.speakers.map(x => x.name).join(', ');
+  memo = String(memo || '').slice(0, 4000);
+  return `당신은 제주특별자치도 현장 간담회의 모든 발언을 빠짐없이 받아 적는 속기사입니다.
+이 오디오는 회의 녹음 중 일부 구간(회의 시작 후 ${fmt(b.start)}부터 약 ${Math.max(1, Math.round(b.dur / 60))}분)입니다. 타임스탬프는 이 오디오의 시작을 00:00으로 하여 적으십시오. (회의 전체 시각 보정은 시스템이 합니다)
+
+[간담회 정보]
+${metaBlock()}
+${names ? `[알려진 발언자] ${names}\n` : ''}${near ? `[현장 기록 — 이 구간 무렵 작성자가 표시한 발언자와 실시간 자막(문장은 부정확, 발언자는 작성자가 확인한 것)]\n${near}\n` : ''}${memo.trim() ? `[작성자 메모 — 고유명사·수치 참고]\n${memo}\n` : ''}
+[규칙]
+1. 들리는 모든 발언을 요약·생략 없이 문장 단위로 그대로 받아쓰십시오. 서론·설명 없이 아래 형식의 줄만 출력하십시오.
+   형식: [MM:SS] 발언자: 발언 내용
+2. 발언자가 바뀌거나 문단이 바뀔 때마다(약 5~20초 간격) 줄을 나누어 타임스탬프를 붙이십시오.
+3. 발언자는 [현장 기록]과 [알려진 발언자]의 이름을 우선 쓰고, 같은 목소리에는 끝까지 같은 이름을 쓰십시오. 알 수 없으면 '화자1', '화자2'로 쓰고, 자기소개·호칭으로 추정되면 '화자1(○○과장 추정)'처럼 적으십시오.
+4. [작성자 메모]의 고유명사·사업명·지명·수치와 발음이 비슷한 부분은 메모 표기로 바로잡고 그 줄 끝에 " ★(메모보정)"을 붙이십시오.
+5. "어", "음" 같은 군말은 빼되 의미는 바꾸지 마십시오. 알아듣기 어려운 부분은 (청취 불가)로 적으십시오. 말소리가 전혀 없으면 아무것도 출력하지 마십시오.`;
+}
+// 구간 기준 시각을 회의 전체 기준으로 바꿈
+function shiftTimes(text, offset){
+  return String(text || '').replace(/^```[a-z]*\s*/i, '').replace(/\s*```\s*$/i, '').split('\n').map(line => {
+    const m = line.match(/^\s*\[(\d{1,3}):(\d{2})(?::(\d{2}))?\]\s*(.*)$/);
+    if(!m) return line.trim();
+    const sec = m[3] != null ? (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) : (+m[1]) * 60 + (+m[2]);
+    return `[${fmt(sec + offset)}] ${m[4]}`;
+  }).filter(Boolean).join('\n');
+}
+async function transcribeOne(b, memo){
+  const prompt = segPrompt(b, memo);
+  const run = async part => (await generateRot([part, { text: prompt }], { first: 'gemini-3.5-transcribe', timeoutMs: 180000 })).text;
+  let uploaded = null;
+  try{
+    const mime = (b.blob.type || 'audio/webm').split(';')[0];
+    let part;
+    if(b.blob.size <= 14 * 1048576) part = { inline_data: { mime_type: mime, data: await blobToB64(b.blob) } };
+    else { const f = await uploadFile(b.blob, b.name); uploaded = f.name; part = { file_data: { mime_type: f.mime, file_uri: f.uri } }; }
+    let text;
+    try{ text = await run(part); }
+    catch(e){
+      if(e.status !== 400) throw e;
+      // 파일 형식을 거부하면 16kHz WAV로 바꿔 다시 보냄
+      const wav = encodeWav(await decodeTo16k(b.blob)), f = await uploadFile(wav, b.name + '.wav');
+      try{ text = await run({ file_data: { mime_type: 'audio/wav', file_uri: f.uri } }); } finally { deleteFile(f.name); }
+    }
+    return shiftTimes(text, b.start);
+  } finally { if(uploaded) deleteFile(uploaded); }
+}
+// 동시에 2구간씩 처리, 실패한 구간은 표시만 하고 나머지는 계속
+async function transcribeSegments(segs, memo, onProg){
+  const out = new Array(segs.length); let next = 0, done = 0, failed = 0;
+  const worker = async () => {
+    while(next < segs.length){
+      const i = next++, b = segs[i];
+      try{ out[i] = await transcribeOne(b, memo); }
+      catch(e){ failed++; out[i] = `[${fmt(b.start)}] ⚠ (이 구간 전사 실패: ${describeErr(e)} — 녹음 ‘${fmt(b.start)}~’ 구간을 다시 들어 확인하세요)`; }
+      done++; onProg(done, segs.length);
+    }
+  };
+  await Promise.all([worker(), worker()]);
+  return { text: out.filter(Boolean).join('\n').trim(), failed };
+}
+
+/* ---- 요약본(상급자 보고용) ---- */
+const BRIEF_RULES = `- brief.headline: 보고용 한 줄 요지(40자 이내, 무엇에 대해 어떤 결론인지)
+- brief.points: 상급자 보고용 핵심 3~5개. 각 1문장 개조식(60자 이내), 중요도 순
+- brief.message: 업무 메신저로 바로 보낼 보고문. "[간담회 결과 보고]"로 시작하고 6~10줄, 일시·장소·참석, 핵심 내용, 주요 건의(발언자 포함), 향후 조치를 담고 '~했습니다/~예정입니다' 체로 간결하게`;
+const BRIEF_SCHEMA = { type: 'OBJECT', properties: { headline: { type: 'STRING' }, points: { type: 'ARRAY', items: { type: 'STRING' } }, message: { type: 'STRING' } }, required: ['headline', 'points', 'message'] };
 const SCHEMA = { type: 'OBJECT', properties: {
+  brief: BRIEF_SCHEMA,
   title: { type: 'STRING' }, overview: { type: 'STRING' },
   keyPoints: { type: 'ARRAY', items: { type: 'STRING' } },
   requests: { type: 'ARRAY', items: { type: 'OBJECT', properties: { speaker: { type: 'STRING' }, topic: { type: 'STRING' }, content: { type: 'STRING' }, response: { type: 'STRING' }, dept: { type: 'STRING' } }, required: ['content'] } },
   actions: { type: 'ARRAY', items: { type: 'OBJECT', properties: { task: { type: 'STRING' }, owner: { type: 'STRING' }, due: { type: 'STRING' } }, required: ['task'] } },
-  report: { type: 'STRING' } }, required: ['overview', 'keyPoints', 'requests', 'actions', 'report'] };
+  report: { type: 'STRING' } }, required: ['brief', 'overview', 'keyPoints', 'requests', 'actions', 'report'] };
 
 /* 진행 표시 */
-function setSteps(list){ $('#steps').innerHTML = list.map((t, i) => `<li data-i="${i}">○ ${esc(t)}</li>`).join(''); }
-function step(i, state){ const li = $(`#steps li[data-i="${i}"]`); if(!li) return; const label = li.textContent.slice(2);
-  li.className = state; li.innerHTML = (state === 'doing' ? '<span class="spin"></span> ' : state === 'done' ? '✔ ' : state === 'fail' ? '✖ ' : '○ ') + esc(label); }
+function setSteps(list){ $('#steps').innerHTML = list.map((t, i) => `<li data-i="${i}" data-label="${esc(t)}">○ ${esc(t)}</li>`).join(''); }
+function step(i, state, label){
+  const li = $(`#steps li[data-i="${i}"]`); if(!li) return;
+  if(label != null) li.dataset.label = label;
+  if(state) li.className = state;
+  const st = li.className;
+  li.innerHTML = (st === 'doing' ? '<span class="spin"></span> ' : st === 'done' ? '✔ ' : st === 'fail' ? '✖ ' : '○ ') + esc(li.dataset.label);
+}
 
 function askConfirm(html){ return new Promise(res => { $('#confirmBody').innerHTML = html; openModal('#mConfirm');
   $('#confirmOk').onclick = () => { $('#mConfirm').hidden = true; res(true); };
@@ -1663,9 +1817,10 @@ async function runAI(){
     }
   } else if(!S.lines.length && !S.memo.trim()){ toast('정리할 전사 내용이나 메모가 없습니다.'); return; }
 
+  const segs = (aimode === 'audio' && !ext) ? segPlan() : null;
   const sizeMB = blobs.reduce((a, b) => a + b.blob.size, 0) / 1048576;
   const ok = await askConfirm(aimode === 'audio'
-    ? `구글 제미나이(${esc(getModel())})로 <b>녹음 파일 ${blobs.length}개 (약 ${sizeMB.toFixed(1)}MB)</b>와 메모를 보냅니다.<br>· 처리 후 업로드한 파일은 바로 삭제 요청합니다.<br>· 무료 등급은 보낸 내용이 구글 서비스 개선에 활용될 수 있습니다.<br>· 1시간 녹음 기준 <b>2~5분</b> 정도 걸립니다. 창을 닫지 마세요.`
+    ? `구글 제미나이로 <b>녹음 ${segs ? '10분 단위 ' + segs.length + '개 구간' : '파일 ' + blobs.length + '개'} (약 ${sizeMB.toFixed(1)}MB)</b>와 메모를 보냅니다.<br>· 처리 후 업로드한 파일은 바로 삭제 요청합니다.<br>· 무료 등급은 보낸 내용이 구글 서비스 개선에 활용될 수 있습니다.<br>· 1시간 녹음 기준 <b>2~5분</b> 정도 걸립니다. 창을 닫지 마세요.`
     : `구글 제미나이(${esc(getModel())})로 <b>실시간 전사 글과 메모(텍스트)만</b> 보냅니다. 음성은 보내지 않습니다.<br>· 무료 등급은 보낸 내용이 구글 서비스 개선에 활용될 수 있습니다.`);
   if(!ok) return;
 
@@ -1673,12 +1828,19 @@ async function runAI(){
   const useMask = $('#optMask').checked;
   const memo = useMask ? mask(S.memo) : S.memo;
   const uploaded = [];
-  const stepsList = aimode === 'audio' ? ['녹음 파일 업로드', '화자 구분 전사 (가장 오래 걸려요)', '결과보고 초안 작성'] : ['결과보고 초안 작성'];
+  const stepsList = segs ? ['녹음 구간 준비 (10분 단위 ' + segs.length + '개)', `화자 구분 전사 (0/${segs.length} 구간)`, '결과보고 초안·요약본 작성']
+    : aimode === 'audio' ? ['녹음 파일 업로드', '화자 구분 전사 (가장 오래 걸려요)', '결과보고 초안·요약본 작성'] : ['결과보고 초안·요약본 작성'];
   setSteps(stepsList);
   let cur = 0;
   try{
     let transcript;
-    if(aimode === 'audio'){
+    if(segs){
+      step(0, 'done'); cur = 1; step(1, 'doing');
+      const r = await transcribeSegments(segs, memo, (d, n) => step(1, null, `화자 구분 전사 (${d}/${n} 구간)`));
+      transcript = r.text || '(전사된 내용이 없습니다)';
+      if(r.failed === segs.length) throw new Error('모든 구간의 전사에 실패했습니다. 잠시 뒤 다시 시도하거나 ‘빠른 정리’를 이용해 주세요.');
+      step(1, 'done', `화자 구분 전사 (${segs.length}개 구간${r.failed ? ', 실패 ' + r.failed : ''})`); cur = 2;
+    } else if(aimode === 'audio'){
       step(0, 'doing'); const fileParts = [];
       for(const b of blobs){
         try{ const f = await uploadFile(b.blob, b.name); uploaded.push(f.name); fileParts.push({ file_data: { mime_type: f.mime, file_uri: f.uri } }); }
@@ -1708,7 +1870,7 @@ async function runAI(){
     if(useMask) transcript = mask(transcript);
     step(cur, 'doing');
     const r2 = await generateRot([{ text: summaryPrompt(transcript, memo) }], { json: true, schema: SCHEMA });
-    let data; try{ data = JSON.parse(r2.text); } catch { data = { overview: '', keyPoints: [], requests: [], actions: [], report: r2.text }; }
+    let data; try{ data = parseLoose(r2.text, '{'); } catch { data = { overview: '', keyPoints: [], requests: [], actions: [], report: r2.text }; }
     step(cur, 'done');
     S.result = { at: Date.now(), mode: aimode, model: getModel(), transcript: aimode === 'audio' ? transcript : '', data };
     saveNow(); renderResult(); toast('✨ AI 회의록이 완성되었습니다.');
@@ -1740,6 +1902,7 @@ function renderResult(){
   if(!r) return;
   const d = r.data || {};
   $('#reportTx').value = d.report || '';
+  renderBrief(d);
   $('#reqBox').innerHTML = reqTableHtml(d).replace(/<h2>/g, '<div class="sec-t">').replace(/<\/h2>/g, '</div>') || '<p class="small">정리된 건의·조치사항이 없습니다.</p>';
   $('#sumBox').innerHTML = `<div class="sec-t">${esc(d.title || S.meta.title || '간담회')}</div><p>${esc(d.overview)}</p><div class="sec-t">핵심 논의사항</div><ul>${(d.keyPoints || []).map(k => `<li>${esc(k)}</li>`).join('')}</ul>`;
   $('#trBox').textContent = r.transcript || '‘빠른 정리’로 만들어 화자 구분 전사본이 없습니다. 왼쪽 실시간 전사를 참고하세요.';
@@ -1753,6 +1916,204 @@ $('#docReport').onclick = () => { const d = S.result.data; download(`${safeName(
 $('#cpReq').onclick = () => { const d = S.result.data;
   copyText(['No\t발언자\t분야\t건의 내용\t현장 답변\t관련 부서', ...(d.requests || []).map((r, i) => [i + 1, r.speaker, r.topic, r.content, r.response, r.dept].join('\t'))].join('\n')); };
 $('#cpTr').onclick = () => copyText(S.result.transcript || linesText());
+
+/* ---- 요약본 화면 ---- */
+function briefOf(d){
+  const b = (d && d.brief) || {};
+  return { headline: b.headline || '', points: (b.points && b.points.length) ? b.points : (d.keyPoints || []).slice(0, 5), message: b.message || '', has: !!(b.headline || b.message) };
+}
+function renderBrief(d){
+  const b = briefOf(d), reqs = (d.requests || []).slice(0, 5), acts = (d.actions || []).slice(0, 6);
+  let h = b.headline ? `<div class="brief-h">◈ ${esc(b.headline)}</div>` : '';
+  h += `<div class="sec-t">핵심 요약</div><ul>${b.points.map(x => `<li>${esc(x)}</li>`).join('') || '<li class="small">없음</li>'}</ul>`;
+  if(reqs.length) h += `<div class="sec-t">주요 건의 및 답변</div><ul>${reqs.map(r => `<li>${r.speaker ? `<b>(${esc(r.speaker)})</b> ` : ''}${esc(r.content)}${r.response ? `<br><span class="small">→ ${esc(r.response)}</span>` : ''}</li>`).join('')}</ul>`;
+  if(acts.length) h += `<div class="sec-t">향후 조치</div><ul>${acts.map(a => `<li>${esc(a.task)}${a.owner || a.due ? ` <span class="small">(${esc([a.owner, a.due].filter(Boolean).join(', '))})</span>` : ''}</li>`).join('')}</ul>`;
+  h += b.message ? `<div class="sec-t">메신저 보고문</div><div class="msgbox">${esc(b.message)}</div>`
+    : `<p class="small" style="margin-top:14px">이 회의록에는 요약본(한 줄 요지·메신저 보고문)이 없습니다. <button id="mkBrief">✨ 요약본 만들기</button></p>`;
+  $('#briefBox').innerHTML = h;
+  const mk = $('#mkBrief'); if(mk) mk.onclick = makeBrief;
+}
+function briefText(d){
+  const b = briefOf(d), m = S.meta;
+  const lines = [`■ ${d.title || m.title || '간담회'} 결과 요약`, `· 일시: ${m.date || ''}`, `· 장소: ${m.place || ''}`, `· 참석: ${m.attendees || ''}`];
+  if(b.headline) lines.push('', `◈ ${b.headline}`);
+  lines.push('', '□ 핵심 요약', ...b.points.map(x => ` ○ ${x}`));
+  if(d.requests?.length) lines.push('', '□ 주요 건의 및 답변', ...d.requests.slice(0, 5).flatMap(r => [` ○ ${r.speaker ? '(' + r.speaker + ') ' : ''}${r.content}`, ...(r.response ? [`  - ${r.response}`] : [])]));
+  if(d.actions?.length) lines.push('', '□ 향후 조치', ...d.actions.map(a => ` ○ ${a.task}${a.owner || a.due ? ' (' + [a.owner, a.due].filter(Boolean).join(', ') + ')' : ''}`));
+  return lines.join('\n');
+}
+let briefBusy = false;
+async function makeBrief(){
+  if(briefBusy || !S.result) return;
+  if(!getKey()){ openSettings(); return; }
+  briefBusy = true; toast('✨ 요약본을 만드는 중입니다…', 4000);
+  try{
+    const d = S.result.data;
+    const src = JSON.stringify({ title: d.title, overview: d.overview, keyPoints: d.keyPoints, requests: d.requests, actions: d.actions, report: d.report }).slice(0, 30000);
+    const r = await generateRot([{ text: `아래 간담회 결과로 상급자 보고용 요약본 JSON을 작성하세요. 사실만 쓰고 지어내지 마세요.\n${BRIEF_RULES.replace(/brief\./g, '')}\n\n[간담회 정보]\n${metaBlock()}\n\n[결과 자료]\n${src}` }], { json: true, schema: BRIEF_SCHEMA, noThink: true });
+    d.brief = parseLoose(r.text, '{'); saveNow(); renderResult(); toast('✅ 요약본을 만들었습니다.');
+  } catch(e){ toast('⚠ 요약본 만들기 실패: ' + String(e.message || e).split('\n')[0], 5000); }
+  finally { briefBusy = false; }
+}
+$('#cpBrief').onclick = () => copyText(briefText(S.result.data));
+$('#cpMsg').onclick = () => { const m = briefOf(S.result.data).message; if(m) copyText(m); else makeBrief(); };
+$('#hwpBrief').onclick = () => saveHwpx('brief');
+$('#hwpReport').onclick = () => saveHwpx('report');
+
+/* 한글(HWPX) 서식 정의: python-hwpx 7.0.1로 만들고 검증한 견본에서 가져옴 */
+const HWPX = {"ids":{"C":{"title":"7","sub":"8","h1":"9","body":"10","body2":"11","note":"12","th":"13","td":"14","box":"15","boxb":"16"},"P":{"title":"20","right":"21","h1":"22","l1":"23","l2":"24","l3":"25","body":"0","note":"26","cellc":"20","celll":"11"},"B":{"cell":"3","head":"4","tbox":"5","sbox":"6"}},"header":"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?><hh:head xmlns:ha=\"http://www.hancom.co.kr/hwpml/2011/app\" xmlns:hp=\"http://www.hancom.co.kr/hwpml/2011/paragraph\" xmlns:hp10=\"http://www.hancom.co.kr/hwpml/2016/paragraph\" xmlns:hs=\"http://www.hancom.co.kr/hwpml/2011/section\" xmlns:hc=\"http://www.hancom.co.kr/hwpml/2011/core\" xmlns:hh=\"http://www.hancom.co.kr/hwpml/2011/head\" xmlns:hhs=\"http://www.hancom.co.kr/hwpml/2011/history\" xmlns:hm=\"http://www.hancom.co.kr/hwpml/2011/master-page\" xmlns:hpf=\"http://www.hancom.co.kr/schema/2011/hpf\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:opf=\"http://www.idpf.org/2007/opf/\" xmlns:ooxmlchart=\"http://www.hancom.co.kr/hwpml/2016/ooxmlchart\" xmlns:hwpunitchar=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\" xmlns:epub=\"http://www.idpf.org/2007/ops\" xmlns:config=\"urn:oasis:names:tc:opendocument:xmlns:config:1.0\" version=\"1.5\" secCnt=\"1\"><hh:beginNum page=\"1\" footnote=\"1\" endnote=\"1\" pic=\"1\" tbl=\"1\" equation=\"1\"/><hh:refList><hh:fontfaces itemCnt=\"7\"><hh:fontface lang=\"HANGUL\" fontCnt=\"5\"><hh:font id=\"0\" face=\"함초롬돋움\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"1\" face=\"함초롬바탕\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"2\" face=\"HY헤드라인M\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"3\" face=\"휴먼명조\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"4\" face=\"맑은 고딕\" type=\"TTF\" isEmbedded=\"0\"/></hh:fontface><hh:fontface lang=\"LATIN\" fontCnt=\"5\"><hh:font id=\"0\" face=\"함초롬돋움\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"1\" face=\"함초롬바탕\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"2\" face=\"HY헤드라인M\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"3\" face=\"휴먼명조\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"4\" face=\"맑은 고딕\" type=\"TTF\" isEmbedded=\"0\"/></hh:fontface><hh:fontface lang=\"HANJA\" fontCnt=\"5\"><hh:font id=\"0\" face=\"함초롬돋움\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"1\" face=\"함초롬바탕\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"2\" face=\"HY헤드라인M\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"3\" face=\"휴먼명조\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"4\" face=\"맑은 고딕\" type=\"TTF\" isEmbedded=\"0\"/></hh:fontface><hh:fontface lang=\"JAPANESE\" fontCnt=\"5\"><hh:font id=\"0\" face=\"함초롬돋움\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"1\" face=\"함초롬바탕\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"2\" face=\"HY헤드라인M\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"3\" face=\"휴먼명조\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"4\" face=\"맑은 고딕\" type=\"TTF\" isEmbedded=\"0\"/></hh:fontface><hh:fontface lang=\"OTHER\" fontCnt=\"5\"><hh:font id=\"0\" face=\"함초롬돋움\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"1\" face=\"함초롬바탕\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"2\" face=\"HY헤드라인M\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"3\" face=\"휴먼명조\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"4\" face=\"맑은 고딕\" type=\"TTF\" isEmbedded=\"0\"/></hh:fontface><hh:fontface lang=\"SYMBOL\" fontCnt=\"5\"><hh:font id=\"0\" face=\"함초롬돋움\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"1\" face=\"함초롬바탕\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"2\" face=\"HY헤드라인M\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"3\" face=\"휴먼명조\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"4\" face=\"맑은 고딕\" type=\"TTF\" isEmbedded=\"0\"/></hh:fontface><hh:fontface lang=\"USER\" fontCnt=\"5\"><hh:font id=\"0\" face=\"함초롬돋움\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"1\" face=\"함초롬바탕\" type=\"TTF\" isEmbedded=\"0\"><hh:typeInfo familyType=\"FCAT_GOTHIC\" weight=\"6\" proportion=\"4\" contrast=\"0\" strokeVariation=\"1\" armStyle=\"1\" letterform=\"1\" midline=\"1\" xHeight=\"1\"/></hh:font><hh:font id=\"2\" face=\"HY헤드라인M\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"3\" face=\"휴먼명조\" type=\"TTF\" isEmbedded=\"0\"/><hh:font id=\"4\" face=\"맑은 고딕\" type=\"TTF\" isEmbedded=\"0\"/></hh:fontface></hh:fontfaces><hh:borderFills itemCnt=\"6\"><hh:borderFill id=\"1\" threeD=\"0\" shadow=\"0\" centerLine=\"NONE\" breakCellSeparateLine=\"0\"><hh:slash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:backSlash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:leftBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:rightBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:topBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:bottomBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:diagonal type=\"SOLID\" width=\"0.1 mm\" color=\"#000000\"/></hh:borderFill><hh:borderFill id=\"2\" threeD=\"0\" shadow=\"0\" centerLine=\"NONE\" breakCellSeparateLine=\"0\"><hh:slash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:backSlash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:leftBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:rightBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:topBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:bottomBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:diagonal type=\"SOLID\" width=\"0.1 mm\" color=\"#000000\"/><hc:fillBrush><hc:winBrush faceColor=\"none\" hatchColor=\"#999999\" alpha=\"0\"/></hc:fillBrush></hh:borderFill><hh:borderFill id=\"3\" threeD=\"0\" shadow=\"0\" centerLine=\"NONE\" breakCellSeparateLine=\"0\"><hh:slash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:backSlash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:leftBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hh:rightBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hh:topBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hh:bottomBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hh:diagonal type=\"SOLID\" width=\"0.1 mm\" color=\"#000000\"/></hh:borderFill><hh:borderFill id=\"4\" threeD=\"0\" shadow=\"0\" centerLine=\"NONE\" breakCellSeparateLine=\"0\"><hh:slash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:backSlash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:leftBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hh:rightBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hh:topBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hh:bottomBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hh:diagonal type=\"SOLID\" width=\"0.1 mm\" color=\"#000000\"/><hc:fillBrush><hc:winBrush faceColor=\"#DCE6F2\" hatchColor=\"#FF000000\" alpha=\"0\"/></hc:fillBrush></hh:borderFill><hh:borderFill id=\"5\" threeD=\"0\" shadow=\"0\" centerLine=\"NONE\" breakCellSeparateLine=\"0\"><hh:slash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:backSlash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:leftBorder type=\"SOLID\" width=\"0.5 mm\" color=\"#1F3864\"/><hh:rightBorder type=\"SOLID\" width=\"0.5 mm\" color=\"#1F3864\"/><hh:topBorder type=\"SOLID\" width=\"0.5 mm\" color=\"#1F3864\"/><hh:bottomBorder type=\"SOLID\" width=\"0.5 mm\" color=\"#1F3864\"/><hh:diagonal type=\"SOLID\" width=\"0.1 mm\" color=\"#000000\"/><hc:fillBrush><hc:winBrush faceColor=\"#F2F6FC\" hatchColor=\"#FF000000\" alpha=\"0\"/></hc:fillBrush></hh:borderFill><hh:borderFill id=\"6\" threeD=\"0\" shadow=\"0\" centerLine=\"NONE\" breakCellSeparateLine=\"0\"><hh:slash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:backSlash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:leftBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#7F7F7F\"/><hh:rightBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#7F7F7F\"/><hh:topBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#7F7F7F\"/><hh:bottomBorder type=\"SOLID\" width=\"0.12 mm\" color=\"#7F7F7F\"/><hh:diagonal type=\"SOLID\" width=\"0.1 mm\" color=\"#000000\"/><hc:fillBrush><hc:winBrush faceColor=\"#F7F7F7\" hatchColor=\"#FF000000\" alpha=\"0\"/></hc:fillBrush></hh:borderFill></hh:borderFills><hh:charProperties itemCnt=\"17\"><hh:charPr id=\"0\" height=\"1000\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"1\" latin=\"1\" hanja=\"1\" japanese=\"1\" other=\"1\" symbol=\"1\" user=\"1\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"1\" height=\"1000\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"2\" height=\"900\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"3\" height=\"900\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"1\" latin=\"1\" hanja=\"1\" japanese=\"1\" other=\"1\" symbol=\"1\" user=\"1\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"4\" height=\"900\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"-5\" latin=\"-5\" hanja=\"-5\" japanese=\"-5\" other=\"-5\" symbol=\"-5\" user=\"-5\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"5\" height=\"1600\" textColor=\"#2E74B5\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"6\" height=\"1100\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"7\" height=\"2000\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"2\" latin=\"2\" hanja=\"2\" japanese=\"2\" other=\"2\" symbol=\"2\" user=\"2\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"8\" height=\"1100\" textColor=\"#404040\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"4\" latin=\"4\" hanja=\"4\" japanese=\"4\" other=\"4\" symbol=\"4\" user=\"4\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"9\" height=\"1500\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"2\" latin=\"2\" hanja=\"2\" japanese=\"2\" other=\"2\" symbol=\"2\" user=\"2\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"10\" height=\"1500\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"3\" latin=\"3\" hanja=\"3\" japanese=\"3\" other=\"3\" symbol=\"3\" user=\"3\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"11\" height=\"1400\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"3\" latin=\"3\" hanja=\"3\" japanese=\"3\" other=\"3\" symbol=\"3\" user=\"3\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"12\" height=\"1100\" textColor=\"#595959\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"4\" latin=\"4\" hanja=\"4\" japanese=\"4\" other=\"4\" symbol=\"4\" user=\"4\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"13\" height=\"1100\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"4\" latin=\"4\" hanja=\"4\" japanese=\"4\" other=\"4\" symbol=\"4\" user=\"4\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:bold/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"14\" height=\"1100\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"4\" latin=\"4\" hanja=\"4\" japanese=\"4\" other=\"4\" symbol=\"4\" user=\"4\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"15\" height=\"1200\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"4\" latin=\"4\" hanja=\"4\" japanese=\"4\" other=\"4\" symbol=\"4\" user=\"4\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr><hh:charPr id=\"16\" height=\"1200\" textColor=\"#000000\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\"><hh:fontRef hangul=\"4\" latin=\"4\" hanja=\"4\" japanese=\"4\" other=\"4\" symbol=\"4\" user=\"4\"/><hh:ratio hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:spacing hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:relSz hangul=\"100\" latin=\"100\" hanja=\"100\" japanese=\"100\" other=\"100\" symbol=\"100\" user=\"100\"/><hh:offset hangul=\"0\" latin=\"0\" hanja=\"0\" japanese=\"0\" other=\"0\" symbol=\"0\" user=\"0\"/><hh:bold/><hh:underline type=\"NONE\" shape=\"SOLID\" color=\"#000000\"/><hh:strikeout shape=\"NONE\" color=\"#000000\"/><hh:outline type=\"NONE\"/><hh:shadow type=\"NONE\" color=\"#C0C0C0\" offsetX=\"10\" offsetY=\"10\"/></hh:charPr></hh:charProperties><hh:tabProperties itemCnt=\"3\"><hh:tabPr id=\"0\" autoTabLeft=\"0\" autoTabRight=\"0\"/><hh:tabPr id=\"1\" autoTabLeft=\"1\" autoTabRight=\"0\"/><hh:tabPr id=\"2\" autoTabLeft=\"0\" autoTabRight=\"1\"/></hh:tabProperties><hh:numberings itemCnt=\"1\"><hh:numbering id=\"1\" start=\"0\"><hh:paraHead start=\"1\" level=\"1\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"DIGIT\" charPrIDRef=\"4294967295\" checkable=\"0\">^1.</hh:paraHead><hh:paraHead start=\"1\" level=\"2\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"HANGUL_SYLLABLE\" charPrIDRef=\"4294967295\" checkable=\"0\">^2.</hh:paraHead><hh:paraHead start=\"1\" level=\"3\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"DIGIT\" charPrIDRef=\"4294967295\" checkable=\"0\">^3)</hh:paraHead><hh:paraHead start=\"1\" level=\"4\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"HANGUL_SYLLABLE\" charPrIDRef=\"4294967295\" checkable=\"0\">^4)</hh:paraHead><hh:paraHead start=\"1\" level=\"5\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"DIGIT\" charPrIDRef=\"4294967295\" checkable=\"0\">(^5)</hh:paraHead><hh:paraHead start=\"1\" level=\"6\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"HANGUL_SYLLABLE\" charPrIDRef=\"4294967295\" checkable=\"0\">(^6)</hh:paraHead><hh:paraHead start=\"1\" level=\"7\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"CIRCLED_DIGIT\" charPrIDRef=\"4294967295\" checkable=\"1\">^7</hh:paraHead><hh:paraHead start=\"1\" level=\"8\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"CIRCLED_HANGUL_SYLLABLE\" charPrIDRef=\"4294967295\" checkable=\"1\">^8</hh:paraHead><hh:paraHead start=\"1\" level=\"9\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"HANGUL_JAMO\" charPrIDRef=\"4294967295\" checkable=\"0\"/><hh:paraHead start=\"1\" level=\"10\" align=\"LEFT\" useInstWidth=\"1\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"PERCENT\" textOffset=\"50\" numFormat=\"ROMAN_SMALL\" charPrIDRef=\"4294967295\" checkable=\"1\"/></hh:numbering></hh:numberings><hh:paraProperties itemCnt=\"27\"><hh:paraPr id=\"0\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"1\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"1500\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"3000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"2\" tabPrIDRef=\"1\" condense=\"20\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"1000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"2000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"3\" tabPrIDRef=\"1\" condense=\"20\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"1\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"2000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"4000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"4\" tabPrIDRef=\"1\" condense=\"20\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"2\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"3000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"6000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"5\" tabPrIDRef=\"1\" condense=\"20\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"3\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"4000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"8000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"6\" tabPrIDRef=\"1\" condense=\"20\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"4\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"5000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"10000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"7\" tabPrIDRef=\"1\" condense=\"20\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"5\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"6000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"12000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"8\" tabPrIDRef=\"1\" condense=\"20\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"6\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"7000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"14000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"9\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"150\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"150\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"10\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"-1310\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"-2620\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"11\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"LEFT\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"12\" tabPrIDRef=\"1\" condense=\"20\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"LEFT\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"1200\" unit=\"HWPUNIT\"/><hc:next value=\"300\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"2400\" unit=\"HWPUNIT\"/><hc:next value=\"600\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"13\" tabPrIDRef=\"2\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"LEFT\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"700\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"1400\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"14\" tabPrIDRef=\"2\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"LEFT\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"1100\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"700\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"2200\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"1400\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"15\" tabPrIDRef=\"2\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"LEFT\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"2200\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"700\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"4400\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"1400\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"16\" tabPrIDRef=\"1\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/paragraph\"><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"8\"/></hp:case><hp:default><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/></hp:default></hp:switch><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"9000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"18000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"17\" tabPrIDRef=\"1\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/paragraph\"><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"9\"/></hp:case><hp:default><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/></hp:default></hp:switch><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"10000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"20000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"18\" tabPrIDRef=\"1\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/paragraph\"><hh:heading type=\"OUTLINE\" idRef=\"0\" level=\"7\"/></hp:case><hp:default><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/></hp:default></hp:switch><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"8000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"16000\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"19\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"800\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"150\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"1600\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"150\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"20\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"CENTER\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"21\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"RIGHT\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"567\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"1134\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"22\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"1134\" unit=\"HWPUNIT\"/><hc:next value=\"283\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"2268\" unit=\"HWPUNIT\"/><hc:next value=\"566\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"23\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"-1134\" unit=\"HWPUNIT\"/><hc:left value=\"2268\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"283\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"-2268\" unit=\"HWPUNIT\"/><hc:left value=\"4536\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"566\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"24\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"-850\" unit=\"HWPUNIT\"/><hc:left value=\"3968\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"-1700\" unit=\"HWPUNIT\"/><hc:left value=\"7936\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"160\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"25\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"JUSTIFY\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"-850\" unit=\"HWPUNIT\"/><hc:left value=\"5102\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"150\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"-1700\" unit=\"HWPUNIT\"/><hc:left value=\"10204\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"0\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"150\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr><hh:paraPr id=\"26\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\" textDir=\"LTR\"><hh:align horizontal=\"LEFT\" vertical=\"BASELINE\"/><hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/><hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"BREAK_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/><hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/><hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\"><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"850\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:case><hp:default><hh:margin><hc:intent value=\"0\" unit=\"HWPUNIT\"/><hc:left value=\"0\" unit=\"HWPUNIT\"/><hc:right value=\"0\" unit=\"HWPUNIT\"/><hc:prev value=\"1700\" unit=\"HWPUNIT\"/><hc:next value=\"0\" unit=\"HWPUNIT\"/></hh:margin><hh:lineSpacing type=\"PERCENT\" value=\"130\" unit=\"HWPUNIT\"/></hp:default></hp:switch><hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/></hh:paraPr></hh:paraProperties><hh:styles itemCnt=\"23\"><hh:style id=\"0\" type=\"PARA\" name=\"바탕글\" engName=\"Normal\" paraPrIDRef=\"0\" charPrIDRef=\"0\" nextStyleIDRef=\"0\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"1\" type=\"PARA\" name=\"본문\" engName=\"Body\" paraPrIDRef=\"1\" charPrIDRef=\"0\" nextStyleIDRef=\"1\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"2\" type=\"PARA\" name=\"개요 1\" engName=\"Outline 1\" paraPrIDRef=\"2\" charPrIDRef=\"0\" nextStyleIDRef=\"2\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"3\" type=\"PARA\" name=\"개요 2\" engName=\"Outline 2\" paraPrIDRef=\"3\" charPrIDRef=\"0\" nextStyleIDRef=\"3\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"4\" type=\"PARA\" name=\"개요 3\" engName=\"Outline 3\" paraPrIDRef=\"4\" charPrIDRef=\"0\" nextStyleIDRef=\"4\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"5\" type=\"PARA\" name=\"개요 4\" engName=\"Outline 4\" paraPrIDRef=\"5\" charPrIDRef=\"0\" nextStyleIDRef=\"5\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"6\" type=\"PARA\" name=\"개요 5\" engName=\"Outline 5\" paraPrIDRef=\"6\" charPrIDRef=\"0\" nextStyleIDRef=\"6\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"7\" type=\"PARA\" name=\"개요 6\" engName=\"Outline 6\" paraPrIDRef=\"7\" charPrIDRef=\"0\" nextStyleIDRef=\"7\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"8\" type=\"PARA\" name=\"개요 7\" engName=\"Outline 7\" paraPrIDRef=\"8\" charPrIDRef=\"0\" nextStyleIDRef=\"8\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"9\" type=\"PARA\" name=\"개요 8\" engName=\"Outline 8\" paraPrIDRef=\"18\" charPrIDRef=\"0\" nextStyleIDRef=\"9\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"10\" type=\"PARA\" name=\"개요 9\" engName=\"Outline 9\" paraPrIDRef=\"16\" charPrIDRef=\"0\" nextStyleIDRef=\"10\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"11\" type=\"PARA\" name=\"개요 10\" engName=\"Outline 10\" paraPrIDRef=\"17\" charPrIDRef=\"0\" nextStyleIDRef=\"11\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"12\" type=\"CHAR\" name=\"쪽 번호\" engName=\"Page Number\" paraPrIDRef=\"0\" charPrIDRef=\"1\" nextStyleIDRef=\"0\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"13\" type=\"CHAR\" name=\"줄 번호\" engName=\"Line Number\" paraPrIDRef=\"0\" charPrIDRef=\"0\" nextStyleIDRef=\"0\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"14\" type=\"PARA\" name=\"머리말\" engName=\"Header\" paraPrIDRef=\"9\" charPrIDRef=\"2\" nextStyleIDRef=\"14\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"15\" type=\"PARA\" name=\"각주\" engName=\"Footnote\" paraPrIDRef=\"10\" charPrIDRef=\"3\" nextStyleIDRef=\"15\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"16\" type=\"PARA\" name=\"미주\" engName=\"Endnote\" paraPrIDRef=\"10\" charPrIDRef=\"3\" nextStyleIDRef=\"16\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"17\" type=\"PARA\" name=\"메모\" engName=\"Memo\" paraPrIDRef=\"11\" charPrIDRef=\"4\" nextStyleIDRef=\"17\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"18\" type=\"PARA\" name=\"차례 제목\" engName=\"TOC Heading\" paraPrIDRef=\"12\" charPrIDRef=\"5\" nextStyleIDRef=\"18\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"19\" type=\"PARA\" name=\"차례 1\" engName=\"TOC 1\" paraPrIDRef=\"13\" charPrIDRef=\"6\" nextStyleIDRef=\"19\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"20\" type=\"PARA\" name=\"차례 2\" engName=\"TOC 2\" paraPrIDRef=\"14\" charPrIDRef=\"6\" nextStyleIDRef=\"20\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"21\" type=\"PARA\" name=\"차례 3\" engName=\"TOC 3\" paraPrIDRef=\"15\" charPrIDRef=\"6\" nextStyleIDRef=\"21\" langID=\"1042\" lockForm=\"0\"/><hh:style id=\"22\" type=\"PARA\" name=\"캡션\" engName=\"Caption\" paraPrIDRef=\"19\" charPrIDRef=\"0\" nextStyleIDRef=\"22\" langID=\"1042\" lockForm=\"0\"/></hh:styles></hh:refList><hh:compatibleDocument targetProgram=\"HWP201X\"><hh:layoutCompatibility/></hh:compatibleDocument><hh:docOption><hh:linkinfo path=\"\" pageInherit=\"0\" footnoteInherit=\"0\"/></hh:docOption><hh:metaTag>{\"name\":\"\"}</hh:metaTag><hh:trackchageConfig flags=\"56\"/></hh:head>","secHead":"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?><hs:sec xmlns:ha=\"http://www.hancom.co.kr/hwpml/2011/app\" xmlns:hp=\"http://www.hancom.co.kr/hwpml/2011/paragraph\" xmlns:hp10=\"http://www.hancom.co.kr/hwpml/2016/paragraph\" xmlns:hs=\"http://www.hancom.co.kr/hwpml/2011/section\" xmlns:hc=\"http://www.hancom.co.kr/hwpml/2011/core\" xmlns:hh=\"http://www.hancom.co.kr/hwpml/2011/head\" xmlns:hhs=\"http://www.hancom.co.kr/hwpml/2011/history\" xmlns:hm=\"http://www.hancom.co.kr/hwpml/2011/master-page\" xmlns:hpf=\"http://www.hancom.co.kr/schema/2011/hpf\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:opf=\"http://www.idpf.org/2007/opf/\" xmlns:ooxmlchart=\"http://www.hancom.co.kr/hwpml/2016/ooxmlchart\" xmlns:hwpunitchar=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\" xmlns:epub=\"http://www.idpf.org/2007/ops\" xmlns:config=\"urn:oasis:names:tc:opendocument:xmlns:config:1.0\"><hp:p id=\"0\" paraPrIDRef=\"0\" styleIDRef=\"0\" pageBreak=\"0\" columnBreak=\"0\" merged=\"0\"><hp:run charPrIDRef=\"0\"><hp:secPr id=\"\" textDirection=\"HORIZONTAL\" spaceColumns=\"1134\" tabStop=\"8000\" tabStopVal=\"4000\" tabStopUnit=\"HWPUNIT\" outlineShapeIDRef=\"1\" memoShapeIDRef=\"0\" textVerticalWidthHead=\"0\" masterPageCnt=\"0\"><hp:grid lineGrid=\"0\" charGrid=\"0\" wonggojiFormat=\"0\"/><hp:startNum pageStartsOn=\"BOTH\" page=\"0\" pic=\"0\" tbl=\"0\" equation=\"0\"/><hp:visibility hideFirstHeader=\"0\" hideFirstFooter=\"0\" hideFirstMasterPage=\"0\" border=\"SHOW_ALL\" fill=\"SHOW_ALL\" hideFirstPageNum=\"0\" hideFirstEmptyLine=\"0\" showLineNumber=\"0\"/><hp:lineNumberShape restartType=\"0\" countBy=\"0\" distance=\"0\" startNumber=\"0\"/><hp:pagePr landscape=\"WIDELY\" width=\"59528\" height=\"84186\" gutterType=\"LEFT_ONLY\"><hp:margin header=\"4252\" footer=\"4252\" gutter=\"0\" left=\"8504\" right=\"8504\" top=\"5668\" bottom=\"4252\"/></hp:pagePr><hp:footNotePr><hp:autoNumFormat type=\"DIGIT\" userChar=\"\" prefixChar=\"\" suffixChar=\")\" supscript=\"0\"/><hp:noteLine length=\"-1\" type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hp:noteSpacing betweenNotes=\"283\" belowLine=\"567\" aboveLine=\"850\"/><hp:numbering type=\"CONTINUOUS\" newNum=\"1\"/><hp:placement place=\"EACH_COLUMN\" beneathText=\"0\"/></hp:footNotePr><hp:endNotePr><hp:autoNumFormat type=\"DIGIT\" userChar=\"\" prefixChar=\"\" suffixChar=\")\" supscript=\"0\"/><hp:noteLine length=\"14692344\" type=\"SOLID\" width=\"0.12 mm\" color=\"#000000\"/><hp:noteSpacing betweenNotes=\"0\" belowLine=\"567\" aboveLine=\"850\"/><hp:numbering type=\"CONTINUOUS\" newNum=\"1\"/><hp:placement place=\"END_OF_DOCUMENT\" beneathText=\"0\"/></hp:endNotePr><hp:pageBorderFill type=\"BOTH\" borderFillIDRef=\"1\" textBorder=\"PAPER\" headerInside=\"0\" footerInside=\"0\" fillArea=\"PAPER\"><hp:offset left=\"1417\" right=\"1417\" top=\"1417\" bottom=\"1417\"/></hp:pageBorderFill><hp:pageBorderFill type=\"EVEN\" borderFillIDRef=\"1\" textBorder=\"PAPER\" headerInside=\"0\" footerInside=\"0\" fillArea=\"PAPER\"><hp:offset left=\"1417\" right=\"1417\" top=\"1417\" bottom=\"1417\"/></hp:pageBorderFill><hp:pageBorderFill type=\"ODD\" borderFillIDRef=\"1\" textBorder=\"PAPER\" headerInside=\"0\" footerInside=\"0\" fillArea=\"PAPER\"><hp:offset left=\"1417\" right=\"1417\" top=\"1417\" bottom=\"1417\"/></hp:pageBorderFill></hp:secPr><hp:ctrl><hp:colPr id=\"\" type=\"NEWSPAPER\" layout=\"LEFT\" colCount=\"1\" sameSz=\"1\" sameGap=\"0\"/></hp:ctrl></hp:run><hp:run charPrIDRef=\"0\"><hp:t/></hp:run><hp:linesegarray><hp:lineseg textpos=\"0\" vertpos=\"0\" vertsize=\"1000\" textheight=\"1000\" baseline=\"850\" spacing=\"600\" horzpos=\"0\" horzsize=\"42520\" flags=\"393216\"/></hp:linesegarray></hp:p>","static":{"version.xml":"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?><hv:HCFVersion xmlns:hv=\"http://www.hancom.co.kr/hwpml/2011/version\" tagetApplication=\"WORDPROCESSOR\" major=\"5\" minor=\"1\" micro=\"1\" buildNumber=\"0\" os=\"1\" xmlVersion=\"1.5\" application=\"Hancom Office Hangul\" appVersion=\"13, 0, 0, 1408 WIN32LEWindows_10\"/>","settings.xml":"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?><ha:HWPApplicationSetting xmlns:ha=\"http://www.hancom.co.kr/hwpml/2011/app\" xmlns:config=\"urn:oasis:names:tc:opendocument:xmlns:config:1.0\"><ha:CaretPosition listIDRef=\"0\" paraIDRef=\"0\" pos=\"16\"/></ha:HWPApplicationSetting>","META-INF/container.xml":"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?><ocf:container xmlns:ocf=\"urn:oasis:names:tc:opendocument:xmlns:container\" xmlns:hpf=\"http://www.hancom.co.kr/schema/2011/hpf\"><ocf:rootfiles><ocf:rootfile full-path=\"Contents/content.hpf\" media-type=\"application/hwpml-package+xml\"/><ocf:rootfile full-path=\"Preview/PrvText.txt\" media-type=\"text/plain\"/><ocf:rootfile full-path=\"META-INF/container.rdf\" media-type=\"application/rdf+xml\"/></ocf:rootfiles></ocf:container>","META-INF/manifest.xml":"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?><odf:manifest xmlns:odf=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\"/>","META-INF/container.rdf":"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description rdf:about=\"\"><ns0:hasPart xmlns:ns0=\"http://www.hancom.co.kr/hwpml/2016/meta/pkg#\" rdf:resource=\"Contents/header.xml\"/></rdf:Description><rdf:Description rdf:about=\"Contents/header.xml\"><rdf:type rdf:resource=\"http://www.hancom.co.kr/hwpml/2016/meta/pkg#HeaderFile\"/></rdf:Description><rdf:Description rdf:about=\"\"><ns0:hasPart xmlns:ns0=\"http://www.hancom.co.kr/hwpml/2016/meta/pkg#\" rdf:resource=\"Contents/section0.xml\"/></rdf:Description><rdf:Description rdf:about=\"Contents/section0.xml\"><rdf:type rdf:resource=\"http://www.hancom.co.kr/hwpml/2016/meta/pkg#SectionFile\"/></rdf:Description><rdf:Description rdf:about=\"\"><rdf:type rdf:resource=\"http://www.hancom.co.kr/hwpml/2016/meta/pkg#Document\"/></rdf:Description></rdf:RDF>","Contents/content.hpf":"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?><opf:package xmlns:ha=\"http://www.hancom.co.kr/hwpml/2011/app\" xmlns:hp=\"http://www.hancom.co.kr/hwpml/2011/paragraph\" xmlns:hp10=\"http://www.hancom.co.kr/hwpml/2016/paragraph\" xmlns:hs=\"http://www.hancom.co.kr/hwpml/2011/section\" xmlns:hc=\"http://www.hancom.co.kr/hwpml/2011/core\" xmlns:hh=\"http://www.hancom.co.kr/hwpml/2011/head\" xmlns:hhs=\"http://www.hancom.co.kr/hwpml/2011/history\" xmlns:hm=\"http://www.hancom.co.kr/hwpml/2011/master-page\" xmlns:hpf=\"http://www.hancom.co.kr/schema/2011/hpf\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:opf=\"http://www.idpf.org/2007/opf/\" xmlns:ooxmlchart=\"http://www.hancom.co.kr/hwpml/2016/ooxmlchart\" xmlns:hwpunitchar=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\" xmlns:epub=\"http://www.idpf.org/2007/ops\" xmlns:config=\"urn:oasis:names:tc:opendocument:xmlns:config:1.0\" version=\"\" unique-identifier=\"\" id=\"\"><opf:metadata><opf:title/><opf:language>ko</opf:language><opf:meta name=\"creator\" content=\"text\"/><opf:meta name=\"subject\" content=\"text\"/><opf:meta name=\"description\" content=\"text\"/><opf:meta name=\"lastsaveby\" content=\"text\"/><opf:meta name=\"CreatedDate\" content=\"text\">2026-11-25T09:34:48Z</opf:meta><opf:meta name=\"ModifiedDate\" content=\"text\">2026-11-25T09:34:48Z</opf:meta><opf:meta name=\"date\" content=\"text\"/><opf:meta name=\"keyword\" content=\"text\"/></opf:metadata><opf:manifest><opf:item id=\"header\" href=\"Contents/header.xml\" media-type=\"application/xml\"/><opf:item id=\"section0\" href=\"Contents/section0.xml\" media-type=\"application/xml\"/><opf:item id=\"settings\" href=\"settings.xml\" media-type=\"application/xml\"/></opf:manifest><opf:spine><opf:itemref idref=\"header\" linear=\"yes\"/><opf:itemref idref=\"section0\" linear=\"yes\"/></opf:spine></opf:package>"}};
+
+/* ============ 한글(HWPX) 문서 만들기 ============ */
+const HU = 283.46;                                   // 1mm = 283.46 HWPUNIT
+const HX_PT = (() => { const C = HWPX.ids.C; return { [C.title]: 20, [C.sub]: 11, [C.h1]: 15, [C.body]: 15, [C.body2]: 14, [C.note]: 11, [C.th]: 11, [C.td]: 11, [C.box]: 12, [C.boxb]: 12 }; })();
+const hxEsc = v => String(v ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const hxId = () => String(Math.floor(Math.random() * 2000000000));
+let hxZ = 0;
+function hP(text, p, c){ return `<hp:p id="${hxId()}" paraPrIDRef="${p}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="${c}"><hp:t>${hxEsc(text)}</hp:t></hp:run></hp:p>`; }
+// 글자 수로 줄 수를 어림해 칸 높이를 정함(한글이 열 때 다시 맞추지만, 처음부터 비슷하게)
+function hxLines(text, widthMM, pt){
+  const avail = Math.max(10, widthMM - 3.6); let w = 0;
+  for(const ch of String(text)) w += (/[ᄀ-ᇿ㄰-㆏가-힯一-鿿○□◈※·]/.test(ch) ? 1 : 0.55) * pt * 0.3528;
+  return Math.max(1, Math.ceil(w / avail));
+}
+// rows: [[{t: 문자열|문자열배열, c: 글자모양, p: 문단모양, c0: 첫 줄 글자모양, bf: 테두리}]]
+function hTbl(rows, widthsMM, { bf, headRows = 0, repeat = false } = {}){
+  const { B } = HWPX.ids, W = widthsMM.map(mm => Math.round(mm * HU)), total = W.reduce((a, b) => a + b, 0);
+  let tr = '', tblH = 0;
+  rows.forEach((row, r) => {
+    let rowH = 0; const cells = [];
+    row.forEach((cell, c) => {
+      const texts = Array.isArray(cell.t) ? cell.t : String(cell.t ?? '').split('\n');
+      let lines = 0; texts.forEach((t, k) => { lines += hxLines(t, widthsMM[c], HX_PT[k === 0 && cell.c0 ? cell.c0 : cell.c] || 11); });
+      rowH = Math.max(rowH, Math.round(lines * (HX_PT[cell.c] || 11) * 100 * 1.35 + 282));
+      cells.push({ cell, texts, c });
+    });
+    tblH += rowH;
+    tr += '<hp:tr>' + cells.map(({ cell, texts, c }) => {
+      const cbf = cell.bf || (r < headRows ? B.head : (bf || B.cell));
+      const paras = texts.map((t, k) => hP(t, cell.p, k === 0 && cell.c0 ? cell.c0 : cell.c)).join('');
+      return `<hp:tc name="" header="${r < headRows ? 1 : 0}" hasMargin="0" protect="0" editable="0" dirty="1" borderFillIDRef="${cbf}"><hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">${paras}</hp:subList><hp:cellAddr colAddr="${c}" rowAddr="${r}"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="${W[c]}" height="${rowH}"/><hp:cellMargin left="510" right="510" top="141" bottom="141"/></hp:tc>`;
+    }).join('') + '</hp:tr>';
+  });
+  const { P } = HWPX.ids;
+  return `<hp:p id="${hxId()}" paraPrIDRef="${P.cellc}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="0"><hp:tbl id="${hxId()}" zOrder="${hxZ++}" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="${repeat ? 1 : 0}" rowCnt="${rows.length}" colCnt="${widthsMM.length}" cellSpacing="0" borderFillIDRef="${bf || B.cell}" noAdjust="0"><hp:sz width="${total}" widthRelTo="ABSOLUTE" height="${tblH}" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="510" right="510" top="141" bottom="141"/>${tr}</hp:tbl></hp:run></hp:p>`;
+}
+const hHead = (labels) => labels.map(t => ({ t, c: HWPX.ids.C.th, p: HWPX.ids.P.cellc }));
+const hCell = (t, center) => ({ t: t || '', c: HWPX.ids.C.td, p: center ? HWPX.ids.P.cellc : HWPX.ids.P.celll });
+// 개조식 본문: □ → 큰 제목, ○ → 1단, - → 2단, ※ → 참고
+function hReportLines(text){
+  const { C, P } = HWPX.ids;
+  return String(text || '').split('\n').map(l => l.trim()).filter(Boolean).map(t =>
+    /^□/.test(t) ? hP(t, P.h1, C.h1) : /^[○◦●]/.test(t) ? hP(t, P.l1, C.body) : /^[-–·∙]/.test(t) ? hP(t, P.l2, C.body2) : /^[※*]/.test(t) ? hP(t, P.l3, C.note) : hP(t, P.body, C.body)
+  ).join('');
+}
+function hxToday(){ const d = new Date(); return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`; }
+function hxTitleBase(d){ return String((d && d.title) || S.meta.title || '현장 간담회').replace(/\s*(결과\s*보고|결과\s*요약|회의\s*기록)\s*$/, '').trim(); }
+function hTitle(text){ const { C, P, B } = HWPX.ids; return hTbl([[{ t: text, c: C.title, p: P.title }]], [150], { bf: B.tbox }) + hP(`${hxToday()}  |  작성: ________`, P.right, C.sub); }
+function hOverview(){
+  const m = S.meta, { C, P } = HWPX.ids;
+  const row = (k, v) => [{ t: k, c: C.th, p: P.cellc, bf: HWPX.ids.B.head }, hCell(v || '-')];
+  return hTbl([row('일   시', m.date), row('장   소', m.place), row('참   석', m.attendees)], [28, 122]);
+}
+const HX_NOTE = '※ 본 자료는 녹취를 바탕으로 AI가 작성한 초안으로, 사실관계 확인 후 활용하시기 바랍니다.';
+function hxReportBody(d){
+  const { C, P, B } = HWPX.ids, b = briefOf(d); let x = hTitle(hxTitleBase(d) + ' 결과보고');
+  if(b.headline || b.points.length) x += hTbl([[{ t: ['◈ 핵심 요약' + (b.headline ? ': ' + b.headline : ''), ...b.points.map(v => '· ' + v)], c: C.box, c0: C.boxb, p: P.celll }]], [150], { bf: B.sbox });
+  x += hReportLines(d.report);
+  if(d.requests?.length){
+    x += hP('□ 건의사항 세부', P.h1, C.h1);
+    x += hTbl([hHead(['No', '발언자', '건의 내용', '현장 답변', '관련 부서']), ...d.requests.map((r, i) => [hCell(String(i + 1), true), hCell(r.speaker, true), hCell(r.content), hCell(r.response), hCell(r.dept, true)])], [10, 24, 58, 38, 20], { headRows: 1, repeat: true });
+  }
+  if(d.actions?.length){
+    x += hP('□ 후속 조치 계획', P.h1, C.h1);
+    x += hTbl([hHead(['No', '조치 사항', '담당', '기한']), ...d.actions.map((a, i) => [hCell(String(i + 1), true), hCell(a.task), hCell(a.owner, true), hCell(a.due, true)])], [10, 88, 32, 20], { headRows: 1, repeat: true });
+  }
+  return x + hP(HX_NOTE, P.note, C.note);
+}
+function hxBriefBody(d){
+  const { C, P, B } = HWPX.ids, b = briefOf(d); let x = hTitle(hxTitleBase(d) + ' 결과 요약') + hOverview();
+  if(b.headline) x += hTbl([[{ t: '◈ ' + b.headline, c: C.boxb, p: P.celll }]], [150], { bf: B.sbox });
+  x += hP('□ 핵심 요약', P.h1, C.h1) + b.points.map(v => hP('○ ' + v, P.l1, C.body)).join('');
+  if(d.requests?.length){
+    x += hP('□ 주요 건의 및 답변', P.h1, C.h1);
+    d.requests.slice(0, 5).forEach(r => { x += hP(`○ ${r.speaker ? '(' + r.speaker + ') ' : ''}${r.content}`, P.l1, C.body); if(r.response) x += hP('- ' + r.response, P.l2, C.body2); });
+  }
+  if(d.actions?.length){ x += hP('□ 향후 조치', P.h1, C.h1); d.actions.forEach(a => { x += hP(`○ ${a.task}${a.owner || a.due ? ' (' + [a.owner, a.due].filter(Boolean).join(', ') + ')' : ''}`, P.l1, C.body); }); }
+  return x + hP(HX_NOTE, P.note, C.note);
+}
+// AI 회의록이 없을 때: 메모와 전사 기록을 그대로 문서로
+function hxRecordBody(){
+  const { C, P } = HWPX.ids; let x = hTitle(hxTitleBase() + ' 회의 기록') + hOverview();
+  const memo = String(S.memo || '').split('\n').map(l => l.trim()).filter(Boolean);
+  x += hP('□ 작성자 메모', P.h1, C.h1) + (memo.length ? memo.map(l => hP(/^[○□-]/.test(l) ? l : '○ ' + l, P.l1, C.body2)).join('') : hP('(없음)', P.l1, C.body2));
+  x += hP('□ 발언 기록', P.h1, C.h1);
+  const lines = (S.result && S.result.transcript ? S.result.transcript.split('\n') : linesText().split('\n')).map(l => l.trim()).filter(Boolean);
+  x += lines.length ? lines.map(l => hP(l, P.l2, C.body2)).join('') : hP('(없음)', P.l1, C.body2);
+  return x + hP('※ 녹음을 바탕으로 자동 기록한 내용으로, 확인 후 활용하시기 바랍니다.', P.note, C.note);
+}
+/* ---- ZIP 묶기(외부 라이브러리 없이) ---- */
+const CRC_T = (() => { const t = new Uint32Array(256); for(let n = 0; n < 256; n++){ let c = n; for(let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for(let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function deflateRaw(u8){
+  if(typeof CompressionStream === 'undefined') return null;
+  try{ return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer()); } catch { return null; }
+}
+async function makeZip(files){
+  const enc = new TextEncoder(), parts = [], central = []; let offset = 0;
+  for(const f of files){
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    let comp = f.store ? null : await deflateRaw(data); const method = comp ? 8 : 0; if(!comp) comp = data;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(8, method, true); lh.setUint16(12, 0x21, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, comp.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
+    parts.push(new Uint8Array(lh.buffer), name, comp);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(10, method, true); ch.setUint16(14, 0x21, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, comp.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    offset += 30 + name.length + comp.length;
+  }
+  const cd = central.reduce((a, b) => a + b.length, 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cd, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: 'application/hwp+zip' });
+}
+async function buildHwpx(body, title){
+  hxZ = 0;
+  const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z'), st = HWPX.static;
+  const hpf = st['Contents/content.hpf'].replace('<opf:title/>', `<opf:title>${hxEsc(title)}</opf:title>`).replace(/(name="(?:CreatedDate|ModifiedDate)" content="text">)[^<]*/g, `$1${now}`);
+  const plain = body.replace(/<\/hp:p>/g, '\n').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&').slice(0, 1000);
+  return makeZip([
+    { name: 'mimetype', data: 'application/hwp+zip', store: true },
+    { name: 'version.xml', data: st['version.xml'] },
+    { name: 'Contents/header.xml', data: HWPX.header },
+    { name: 'Contents/section0.xml', data: HWPX.secHead + body + '</hs:sec>' },
+    { name: 'Preview/PrvText.txt', data: plain },
+    { name: 'settings.xml', data: st['settings.xml'] },
+    { name: 'META-INF/container.rdf', data: st['META-INF/container.rdf'] },
+    { name: 'Contents/content.hpf', data: hpf },
+    { name: 'META-INF/container.xml', data: st['META-INF/container.xml'] },
+    { name: 'META-INF/manifest.xml', data: st['META-INF/manifest.xml'] }
+  ]);
+}
+// iPad는 공유 시트(파일 앱·카톡·메일), PC는 바로 내려받기
+async function deliverFile(name, blob){
+  if(isTouch && navigator.canShare){
+    const f = new File([blob], name, { type: blob.type || 'application/octet-stream' });
+    if(navigator.canShare({ files: [f] })){ try{ await navigator.share({ files: [f], title: name }); return; } catch(e){ if(e.name === 'AbortError') return; } }
+  }
+  download(name, blob);
+}
+async function saveHwpx(kind){
+  const d = S.result && S.result.data;
+  if((kind === 'report' || kind === 'brief') && !d){ toast('먼저 ‘✨ AI 회의록’을 만들어 주세요. (회의 기록만 저장하려면 💾 저장 → 회의 기록)'); return; }
+  try{
+    const base = hxTitleBase(d);
+    const [body, title, suffix] = kind === 'brief' ? [hxBriefBody(d), base + ' 결과 요약', '결과요약'] : kind === 'report' ? [hxReportBody(d), base + ' 결과보고', '결과보고'] : [hxRecordBody(), base + ' 회의 기록', '회의기록'];
+    await deliverFile(`${safeName()}_${suffix}.hwpx`, await buildHwpx(body, title));
+    toast('📄 한글(HWPX) 파일을 만들었습니다.');
+  } catch(e){ toast('⚠ 한글 파일을 만들지 못했습니다: ' + (e.message || e), 5000); }
+}
+
 $('#btnRedo').onclick = () => { const st = $('#aiSetup'); st.hidden = !st.hidden; if(!st.hidden){ $('#aiView').scrollTop = 0; toast('방식을 고른 뒤 ‘AI 회의록 만들기’를 다시 누르세요.'); } };
 
 /* ============ 설정 ============ */
